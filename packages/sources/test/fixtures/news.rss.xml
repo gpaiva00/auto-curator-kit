@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Portal Exemplo - Celebridades</title>
+    <item>
+      <title>Influencer Exemplo 1 fecha parceria milionaria com marca de tenis</title>
+      <link>https://portal.example.com/exemplo-1-parceria?utm_source=rss</link>
+      <description><![CDATA[<p>O criador de conteudo <b>Influencer Exemplo 1</b> anunciou nesta sexta uma nova parceria.</p>]]></description>
+      <pubDate>Sat, 07 Nov 2026 13:00:00 -0300</pubDate>
+      <media:content url="https://img.example.com/ex1.jpg" medium="image"/>
+    </item>
+    <item>
+      <title>Previsao do tempo para o fim de semana</title>
+      <link>https://portal.example.com/tempo</link>
+      <description>Sol em todo o pais.</description>
+      <pubDate>Sat, 07 Nov 2026 13:05:00 -0300</pubDate>
+    </item>
+    <item>
+      <title>Influencer Exemplo 2 &amp; amigos viajam para Fernando de Noronha</title>
+      <link>https://portal.example.com/exemplo-2-noronha</link>
+      <description>Viagem foi registrada nos stories.</description>
+      <pubDate>Fri, 01 Jan 2021 10:00:00 -0300</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
+  <title>Blog de Astronomia</title>
+  <link href="https://blog.example.org/" rel="alternate"/>
+  <link href="https://blog.example.org/atom.xml" rel="self"/>
+  <updated>2026-11-10T12:00:00Z</updated>
+  <entry>
+    <title>Cometa visível a olho nu &amp; como observar</title>
+    <link rel="self" href="https://blog.example.org/api/cometa"/>
+    <link rel="alternate" type="text/html" href="https://blog.example.org/cometa?utm_source=atom"/>
+    <id>tag:blog.example.org,2026:cometa</id>
+    <published>2026-11-10T09:30:00Z</published>
+    <updated>2026-11-10T10:00:00Z</updated>
+    <author><name>Marina Lopes</name></author>
+    <summary type="html">&lt;p&gt;O cometa chega ao ponto mais brilhante &lt;b&gt;nesta semana&lt;/b&gt;.&lt;/p&gt;</summary>
+    <media:thumbnail url="https://img.example.org/cometa.jpg"/>
+  </entry>
+  <entry>
+    <title>Sem link válido</title>
+    <id>x</id>
+  </entry>
+  <entry>
+    <title>Eclipse lunar em março</title>
+    <link href="https://blog.example.org/eclipse"/>
+    <updated>2026-11-09T08:00:00Z</updated>
+    <content type="html"><![CDATA[<p>Resumo do eclipse.</p><img src="https://img.example.org/eclipse.png">]]></content>
+  </entry>
+</feed>

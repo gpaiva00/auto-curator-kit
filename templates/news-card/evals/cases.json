@@ -1,0 +1,641 @@
+[
+  {
+    "name": "clean_publishable_image_card",
+    "item": {
+      "id": "c01",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C01/",
+      "author": "anasouza",
+      "title": "",
+      "text": "Contei pra vocês: meu primeiro livro sai dia 20/11! Pré-venda abre amanhã.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c01.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "publish"
+    }
+  },
+  {
+    "name": "video_story_when_video_is_the_news",
+    "item": {
+      "id": "c02",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/reel/C02/",
+      "author": "caiolima",
+      "title": "",
+      "text": "Mostrando pela primeira vez o estúdio novo em São Paulo! Estreia do canal dia 1/12.",
+      "media": [
+        {
+          "type": "video",
+          "url": "https://cdn.example.com/c02.mp4",
+          "durationSec": 20
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "reel"
+      }
+    },
+    "expected": {
+      "verdict": "publish"
+    }
+  },
+  {
+    "name": "no_source_rumor",
+    "item": {
+      "id": "c03",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C03/",
+      "author": "gabilopes",
+      "title": "",
+      "text": "Dizem por aí que a Gabi vai sair do programa, mas ninguém confirmou. Fontes próximas falam em desentendimento.",
+      "media": [],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "unverified"
+      ]
+    }
+  },
+  {
+    "name": "health_topic",
+    "item": {
+      "id": "c04",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C04/",
+      "author": "dudareis",
+      "title": "",
+      "text": "Fiquei internada essa semana por causa de uma infecção, mas já estou melhor.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c04.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "health"
+      ]
+    }
+  },
+  {
+    "name": "minor_involved",
+    "item": {
+      "id": "c05",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C05/",
+      "author": "rafadias",
+      "title": "",
+      "text": "Hoje é aniversário da minha filha de 6 anos! Olha a festa dela, quer ver o rostinho?",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c05.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "minor"
+      ]
+    }
+  },
+  {
+    "name": "lawsuit_without_official_source",
+    "item": {
+      "id": "c06",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C06/",
+      "author": "leomar",
+      "title": "",
+      "text": "Parece que o Léo Mar está sendo processado por uma marca, segundo uma página de fofocas. Sem confirmação.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c06.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "skip",
+      "alsoAcceptable": [
+        "needs_human"
+      ],
+      "mustFlag": [
+        "crime_or_lawsuit"
+      ]
+    }
+  },
+  {
+    "name": "death",
+    "item": {
+      "id": "c07",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C07/",
+      "author": "miacampos",
+      "title": "",
+      "text": "Com muita tristeza, nos despedimos hoje do nosso querido criador Zeca. Velório amanhã em Recife.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c07.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "death"
+      ]
+    }
+  },
+  {
+    "name": "leaked_private_chat",
+    "item": {
+      "id": "c08",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C08/",
+      "author": "biaplay",
+      "title": "",
+      "text": "Vazou: print da conversa privada da Bia com o namorado. Olha o que ela escreveu no direct!",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c08.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "leaked_content"
+      ]
+    }
+  },
+  {
+    "name": "sarcasm_ambiguous",
+    "item": {
+      "id": "c09",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C09/",
+      "author": "nandovlog",
+      "title": "",
+      "text": "Gente, larguei tudo, vou ser padeiro em Minas e nunca mais postar. Ah, e a lua é de queijo 😂🧀",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c09.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "alsoAcceptable": [
+        "skip"
+      ]
+    }
+  },
+  {
+    "name": "duplicate_looking_throwback",
+    "item": {
+      "id": "c10",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C10/",
+      "author": "anasouza",
+      "title": "",
+      "text": "#tbt Relembrando quando anunciei meu primeiro livro, lá em 2023. Saudade desse dia!",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c10.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "skip",
+      "mustFlag": [
+        "unverified"
+      ],
+      "alsoAcceptable": [
+        "needs_human"
+      ]
+    }
+  },
+  {
+    "name": "comment_thread_only_gossip",
+    "item": {
+      "id": "c11",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C11/",
+      "author": "gabilopes",
+      "title": "",
+      "text": "@fulana1: ouvi que ela brigou feio com a produção. @fulana2: sim, minha prima trabalha lá e disse que vai ser demitida.",
+      "media": [],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "comment_thread"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human"
+    },
+    "note": "Depende do nicho do style-guide.md (feito para o perfil de celebridades brasileiras)."
+  },
+  {
+    "name": "trend_only_item",
+    "item": {
+      "id": "c12",
+      "source": "web",
+      "sourceUrl": "https://trends.google.com/trending?geo=BR",
+      "author": "caiolima",
+      "title": "",
+      "text": "Caio Lima: buscas +900% nas últimas 4 horas no Google Trends BR. Motivo não identificado.",
+      "media": [],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "trend"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "alsoAcceptable": [
+        "skip"
+      ]
+    },
+    "note": "Depende do nicho do style-guide.md (feito para o perfil de celebridades brasileiras)."
+  },
+  {
+    "name": "non_brazilian_subject",
+    "item": {
+      "id": "c13",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C13/",
+      "author": "taylorbrooks",
+      "title": "",
+      "text": "Excited to announce my world tour starts in London next June! Tickets on sale Friday.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c13.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "alsoAcceptable": [
+        "skip"
+      ]
+    },
+    "note": "Depende do nicho do style-guide.md (feito para o perfil de celebridades brasileiras)."
+  },
+  {
+    "name": "text_in_english_brazilian_creator",
+    "item": {
+      "id": "c14",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C14/",
+      "author": "biaplay",
+      "title": "",
+      "text": "Big news: I'm partnering with GameForge to stream the new season live from São Paulo on December 5th!",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c14.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "publish"
+    }
+  },
+  {
+    "name": "accusation_between_creators",
+    "item": {
+      "id": "c15",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C15/",
+      "author": "rafadias",
+      "title": "",
+      "text": "O Nando copiou meu vídeo inteiro e roubou minha ideia. Isso é crime e todo mundo precisa saber.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c15.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "accusation"
+      ]
+    }
+  },
+  {
+    "name": "sexual_content",
+    "item": {
+      "id": "c16",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C16/",
+      "author": "miacampos",
+      "title": "",
+      "text": "Novo ensaio sem roupa já está no ar, link na bio, só para maiores.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c16.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "sexual_content"
+      ]
+    }
+  },
+  {
+    "name": "breakup_own_post_private_life",
+    "item": {
+      "id": "c17",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C17/",
+      "author": "leomar",
+      "title": "",
+      "text": "Eu e a Carol terminamos. Peço respeito neste momento.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c17.jpg"
+        }
+      ],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "mustFlag": [
+        "private_life"
+      ]
+    }
+  },
+  {
+    "name": "repost_credits_original_author",
+    "item": {
+      "id": "c18",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C18/",
+      "author": "leodias",
+      "title": "",
+      "text": "Gente como a gente! Leonardo arrancou risadas ao contar uma história inusitada em conversa com a esposa, Poliana Rocha. O cantor revelou que parou em um bar em Paranaíba, mas o proprietário, seu João, não fazia ideia de quem ele era e ainda ofereceu uma cachaça 51. Bem-humorado, o sertanejo afirmou que aquele momento foi “a melhor coisa que aconteceu na carreira”.\n\n(Vídeo e Foto de Capa: Reprodução Instagram @poliana | @leonardo)",
+      "media": [
+        {
+          "type": "video",
+          "localPath": "/m/c18.mp4",
+          "durationSec": 35
+        }
+      ],
+      "postedAt": "2026-11-07T18:00:00Z",
+      "engagement": {},
+      "extra": {
+        "kind": "reel"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "alsoAcceptable": [
+        "publish"
+      ],
+      "headlineMustInclude": [
+        "Leonardo"
+      ],
+      "headlineMustNotInclude": [
+        "Leo Dias"
+      ],
+      "sourceCreditMustInclude": [
+        "@leonardo",
+        "@leodias"
+      ],
+      "bodyMustInclude": [
+        "@leonardo",
+        "@leodias"
+      ]
+    }
+  },
+  {
+    "name": "own_post_credits_poster",
+    "item": {
+      "id": "c19",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C19/",
+      "author": "caiolima",
+      "title": "",
+      "text": "Mostrando pela primeira vez o estúdio novo em São Paulo! Estreia do canal dia 1/12.",
+      "media": [
+        {
+          "type": "video",
+          "localPath": "/m/c19.mp4",
+          "durationSec": 35
+        }
+      ],
+      "postedAt": "2026-11-07T18:00:00Z",
+      "engagement": {},
+      "extra": {
+        "kind": "reel"
+      }
+    },
+    "expected": {
+      "verdict": "publish",
+      "sourceCreditMustInclude": [
+        "@caiolima"
+      ],
+      "bodyMustInclude": [
+        "@caiolima"
+      ]
+    }
+  },
+  {
+    "name": "repost_without_credit_line",
+    "item": {
+      "id": "c20",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C20/",
+      "author": "portalnoticias",
+      "title": "",
+      "text": "O cantor Rafa Dias anunciou que vai gravar um DVD em Goiânia no dia 12 de dezembro, segundo ele mesmo contou em vídeo nas redes.",
+      "media": [
+        {
+          "type": "video",
+          "localPath": "/m/c20.mp4",
+          "durationSec": 35
+        }
+      ],
+      "postedAt": "2026-11-07T18:00:00Z",
+      "engagement": {},
+      "extra": {
+        "kind": "reel"
+      }
+    },
+    "expected": {
+      "verdict": "needs_human",
+      "alsoAcceptable": [
+        "publish"
+      ],
+      "headlineMustInclude": [
+        "Rafa Dias"
+      ],
+      "headlineMustNotInclude": [
+        "Portal"
+      ],
+      "sourceCreditMustInclude": [
+        "@portalnoticias"
+      ]
+    }
+  },
+  {
+    "name": "violent_death_scene",
+    "item": {
+      "id": "c21",
+      "source": "instagram-profile",
+      "sourceUrl": "https://www.instagram.com/p/C20/",
+      "author": "alfinetei",
+      "title": "",
+      "text": "Mãe limpando a rua onde o filho foi assassinado a tiros. Cena muito dolorosa.",
+      "media": [
+        {
+          "type": "image",
+          "url": "https://cdn.example.com/c20.jpg"
+        }
+      ],
+      "postedAt": "2026-11-09T13:00:00Z",
+      "engagement": {
+        "likes": 20000
+      },
+      "extra": {
+        "kind": "post"
+      }
+    },
+    "expected": {
+      "verdict": "skip",
+      "mustFlag": [
+        "violence"
+      ],
+      "alsoAcceptable": [
+        "needs_human"
+      ]
+    }
+  }
+]

@@ -1,0 +1,76 @@
+{
+  "id": "noticias-exemplo",
+  "name": "Meu Perfil",
+  "template": "news-card",
+  "language": "pt-BR",
+  "timezone": "America/Sao_Paulo",
+
+  "sources": [
+    { "type": "rss", "name": "Metropoles Celebridades", "url": "https://www.metropoles.com/celebridades/feed" },
+    { "type": "rss", "name": "Metropoles Fabia Oliveira", "url": "https://www.metropoles.com/colunas/fabia-oliveira/feed" },
+    { "type": "rss", "name": "Terra Gente", "url": "https://www.terra.com.br/diversao/gente/rss.xml" },
+    { "type": "rss", "name": "Capricho", "url": "https://www.capricho.com.br/feed" },
+    { "type": "rss", "name": "Extra Famosos", "url": "https://extra.globo.com/rss/extra/famosos/" },
+    { "type": "rss", "name": "Quem", "url": "https://revistaquem.globo.com/rss/quem/" },
+    { "type": "rss", "name": "Gshow", "url": "https://gshow.globo.com/rss/gshow/" },
+    {
+      "type": "google-news",
+      "name": "Google News: famosos (exemplo 1)",
+      "query": "\"Famoso Exemplo Um\" OR \"Famosa Exemplo Dois\" OR \"Influencer Exemplo Tres\"",
+      "hl": "pt-BR",
+      "gl": "BR",
+      "ceid": "BR:pt-419"
+    },
+    {
+      "type": "instagram-profile",
+      "name": "Perfis de fofoca (navegador)",
+      "enabled": false,
+      "handles": ["perfil_publico_exemplo_1", "perfil_publico_exemplo_2"],
+      "postsPerHandle": 5
+    },
+    { "type": "manual" }
+  ],
+
+  "destinations": [
+    { "platform": "instagram", "publisher": "buffer", "mode": "draft", "dailyCap": 12 },
+    { "platform": "tiktok", "publisher": "buffer", "mode": "draft", "dailyCap": 10, "only": "video" }
+  ],
+
+  "media": { "strategy": "render", "template": "auto", "maxImages": 4, "downloadVideo": true, "maxVideoSec": 300 },
+
+  "brand": {
+    "name": "Meu Perfil",
+    "handle": "@meuperfil",
+    "colors": { "primary": "#111111", "accent": "#FFC400", "background": "#FFFFFF", "text": "#111111" },
+    "fontFamily": "Inter"
+  },
+
+  "editorial": {
+    "credit": "show",
+    "riskFlags": ["health", "minor", "private_life", "accusation", "crime_or_lawsuit", "death", "violence", "sexual_content", "leaked_content", "single_source", "unverified", "outdated"],
+    "forceReview": ["health", "minor", "private_life", "accusation", "death", "sexual_content", "leaked_content", "single_source", "unverified", "outdated"],
+    "skip": ["violence", "crime_or_lawsuit"],
+    "body": { "minChars": 20, "maxChars": 2000 },
+    "headline": { "maxChars": 160 },
+    "hashtags": { "min": 3, "max": 6 },
+    "firstComment": false,
+    "minConfidence": 0.6,
+    "blockedPatterns": ["\\bcupom\\b", "\\bpromo(ção|cao)\\b"]
+  },
+
+  "pipeline": {
+    "intervalsMinutes": { "ingest": 30, "pipeline": 5, "publish": 5, "metrics": 360 },
+    "triageMinScore": 60,
+    "maxItemAgeHours": 24,
+    "maxNewPerSource": 15,
+    "curatorPerTick": 8,
+    "maxPendingApproval": 10,
+    "dailyApprovalCap": 12,
+    "subjectCooldownHours": 4,
+    "urgentBypassScore": 90
+  },
+
+  "telegram": { "rejectReasons": "default" },
+
+  "models": "default"
+}

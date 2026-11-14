@@ -1,0 +1,26 @@
+{
+  "name": "news-card",
+  "description": "Perfil de notícias curtas com card renderizado (imagem ou vídeo), crédito da fonte visível e aprovação no Telegram. Herdado do perfil-noticias; nicho, voz e persona ficam no style-guide.md do perfil.",
+  "draftExtraRequired": ["categoryTag"],
+  "defaults": {
+    "language": "pt-BR",
+    "media": { "strategy": "render", "template": "auto", "maxImages": 4, "downloadVideo": true, "maxVideoSec": 300 },
+    "editorial": {
+      "credit": "show",
+      "riskFlags": ["health", "minor", "private_life", "accusation", "crime_or_lawsuit", "death", "violence", "sexual_content", "leaked_content", "single_source", "unverified", "outdated"],
+      "forceReview": ["health", "minor", "private_life", "accusation", "death", "sexual_content", "leaked_content", "single_source", "unverified", "outdated"],
+      "skip": ["violence", "crime_or_lawsuit"],
+      "body": { "minChars": 20, "maxChars": 2000 },
+      "headline": { "maxChars": 160 },
+      "hashtags": { "min": 3, "max": 6 },
+      "firstComment": false,
+      "minConfidence": 0.6
+    },
+    "pipeline": {
+      "triageMinScore": 60,
+      "maxItemAgeHours": 24,
+      "subjectCooldownHours": 4,
+      "urgentBypassScore": 90
+    }
+  }
+}

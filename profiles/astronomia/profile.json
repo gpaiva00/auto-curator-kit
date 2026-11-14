@@ -1,0 +1,70 @@
+{
+  "id": "astronomia",
+  "name": "Céu de Hoje",
+  "template": "news-card",
+  "language": "pt-BR",
+  "timezone": "America/Sao_Paulo",
+
+  "sources": [
+    { "type": "rss", "name": "NASA", "url": "https://www.nasa.gov/feed/", "maxItems": 15 },
+    { "type": "rss", "name": "NASA Releases", "url": "https://www.nasa.gov/news-release/feed/", "maxItems": 15 },
+    { "type": "rss", "name": "ESA", "url": "https://www.esa.int/rss/news.rss", "maxItems": 15 },
+    { "type": "rss", "name": "APOD", "url": "https://apod.com/feed.rss", "maxItems": 5 },
+    { "type": "rss", "name": "Space.com", "url": "https://www.space.com/feeds/all", "maxItems": 20 },
+    { "type": "rss", "name": "Universe Today", "url": "https://www.universetoday.com/feed", "maxItems": 15 },
+    { "type": "rss", "name": "Phys.org Space", "url": "https://phys.org/rss-feed/space-news/", "maxItems": 15 },
+    { "type": "rss", "name": "Olhar Digital Ciência e Espaço", "url": "https://olhardigital.com.br/editorias/ciencia-e-espaco/feed/", "maxItems": 15 },
+    { "type": "rss", "name": "Canaltech Espaço", "url": "https://www.canaltech.com.br/rss/espaco/", "maxItems": 15 },
+    { "type": "rss", "name": "Inovação Tecnológica", "url": "https://inovacaotecnologica.com.br/boletim/rss.xml", "maxItems": 15 },
+    {
+      "type": "google-news",
+      "name": "Google News: astronomia (pt-BR)",
+      "query": "astronomia OR \"James Webb\" OR eclipse OR cometa OR \"chuva de meteoros\" OR exoplaneta OR NASA OR \"Agência Espacial\" when:2d",
+      "hl": "pt-BR",
+      "gl": "BR",
+      "ceid": "BR:pt-419",
+      "maxItems": 15
+    },
+    { "type": "manual" }
+  ],
+
+  "destinations": [
+    { "platform": "instagram", "publisher": "buffer", "mode": "draft", "dailyCap": 4 }
+  ],
+
+  "media": { "strategy": "render", "template": "auto" },
+
+  "brand": {
+    "name": "Céu de Hoje",
+    "handle": "@ceudehoje",
+    "colors": { "primary": "#0B1B3A", "accent": "#FFD23F", "background": "#0B1B3A", "text": "#F5F7FF" },
+    "fontFamily": "Inter"
+  },
+
+  "editorial": {
+    "credit": "show",
+    "riskFlags": ["pseudoscience", "single_source", "unverified", "outdated"],
+    "forceReview": ["pseudoscience", "single_source", "unverified", "outdated"],
+    "skip": [],
+    "body": { "minChars": 20, "maxChars": 2000 },
+    "headline": { "maxChars": 160 },
+    "hashtags": { "min": 3, "max": 6 },
+    "firstComment": false,
+    "minConfidence": 0.6,
+    "blockedPatterns": ["\\bhor[óo]scopo\\b", "\\bsigno\\b", "\\bmapa astral\\b", "\\bcupom\\b"]
+  },
+
+  "pipeline": {
+    "intervalsMinutes": { "ingest": 30, "pipeline": 5, "publish": 5, "metrics": 360 },
+    "triageMinScore": 60,
+    "maxItemAgeHours": 48,
+    "maxNewPerSource": 10,
+    "maxPendingApproval": 5,
+    "dailyApprovalCap": 6,
+    "subjectCooldownHours": 0
+  },
+
+  "telegram": { "rejectReasons": "default" },
+
+  "models": "default"
+}

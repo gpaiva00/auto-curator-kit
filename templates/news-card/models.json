@@ -1,0 +1,74 @@
+{
+  "monthlyBudgetBRL": 60,
+  "usdBrl": 5.5,
+  "roles": {
+    "triage": {
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-20b",
+      "inputUsdPerM": 0.075,
+      "outputUsdPerM": 0.3,
+      "maxTokens": 4000,
+      "fallback": [
+        {
+          "baseUrl": "https://api.deepseek.com/v1",
+          "apiKeyEnv": "DEEPSEEK_API_KEY",
+          "model": "deepseek-flash",
+          "inputUsdPerM": 0.28,
+          "outputUsdPerM": 0.42,
+          "maxTokens": 4000
+        },
+        {
+          "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+          "apiKeyEnv": "GEMINI_API_KEY",
+          "model": "gemini-2.5-flash-lite",
+          "inputUsdPerM": 0.1,
+          "outputUsdPerM": 0.4,
+          "maxTokens": 4000
+        },
+        {
+          "baseUrl": "https://openrouter.ai/api/v1",
+          "apiKeyEnv": "OPENROUTER_API_KEY",
+          "model": "deepseek/deepseek-v4.1-flash",
+          "inputUsdPerM": 0.0507,
+          "outputUsdPerM": 0.2028,
+          "maxTokens": 4000
+        }
+      ]
+    },
+    "curator": {
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-120b",
+      "inputUsdPerM": 0.15,
+      "outputUsdPerM": 0.6,
+      "maxTokens": 4000,
+      "fallback": [
+        {
+          "baseUrl": "https://api.deepseek.com/v1",
+          "apiKeyEnv": "DEEPSEEK_API_KEY",
+          "model": "deepseek-flash",
+          "inputUsdPerM": 0.28,
+          "outputUsdPerM": 0.42,
+          "maxTokens": 4000
+        },
+        {
+          "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+          "apiKeyEnv": "GEMINI_API_KEY",
+          "model": "gemini-2.5-flash-lite",
+          "inputUsdPerM": 0.1,
+          "outputUsdPerM": 0.4,
+          "maxTokens": 4000
+        },
+        {
+          "baseUrl": "https://openrouter.ai/api/v1",
+          "apiKeyEnv": "OPENROUTER_API_KEY",
+          "model": "deepseek/deepseek-v4.1-flash",
+          "inputUsdPerM": 0.0507,
+          "outputUsdPerM": 0.2028,
+          "maxTokens": 4000
+        }
+      ]
+    }
+  }
+}

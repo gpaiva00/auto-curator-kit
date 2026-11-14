@@ -1,0 +1,62 @@
+{
+  "id": "linkedin-exemplo",
+  "name": "Meu LinkedIn",
+  "template": "thought-leader",
+  "language": "pt-BR",
+  "timezone": "America/Sao_Paulo",
+
+  "sources": [
+    {
+      "type": "x-feed",
+      "name": "Feed do X (Para você)",
+      "feed": "for_you",
+      "ownHandle": "seu_usuario",
+      "includeReplies": false,
+      "minChars": 120,
+      "minLikes": 0,
+      "maxPerScan": 15,
+      "limits": { "minDelaySeconds": 20, "maxPerHour": 20, "cooldownMinutes": 60 }
+    },
+    { "type": "manual" }
+  ],
+
+  "destinations": [
+    {
+      "platform": "linkedin",
+      "publisher": "buffer",
+      "mode": "draft",
+      "dailyCap": 2,
+      "composeUrl": "https://www.linkedin.com/feed/?shareActive=true"
+    }
+  ],
+
+  "media": { "strategy": "original", "maxImages": 4, "downloadVideo": true, "maxVideoSec": 300 },
+
+  "editorial": {
+    "credit": "hide",
+    "riskFlags": ["confidential", "controversial", "personal", "attack", "unverified", "outdated"],
+    "forceReview": ["confidential", "controversial", "personal", "attack", "unverified", "outdated"],
+    "skip": [],
+    "body": { "minChars": 20, "maxChars": 3000 },
+    "headline": { "maxChars": 100 },
+    "hashtags": { "min": 3, "max": 5 },
+    "firstComment": true,
+    "minConfidence": 0.6,
+    "blockedPatterns": ["black (november|friday)", "cupom", "\\bpromo(ção|cao)?\\b", "\\bdesconto\\b", "\\bassine\\b", "\\bR\\$\\s?\\d+[,.]?\\d*\\s*/\\s*m[êe]s"]
+  },
+
+  "pipeline": {
+    "intervalsMinutes": { "ingest": 30, "pipeline": 5, "publish": 5, "metrics": 360 },
+    "triageMinScore": 60,
+    "maxItemAgeHours": 24,
+    "maxNewPerSource": 15,
+    "curatorPerTick": 3,
+    "maxAttempts": 3,
+    "maxPendingApproval": 3,
+    "dailyApprovalCap": 4
+  },
+
+  "telegram": { "rejectReasons": "default" },
+
+  "models": "default"
+}

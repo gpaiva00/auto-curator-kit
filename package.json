@@ -2,8 +2,12 @@
   "name": "auto-curator-kit",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=22.5" },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -12,7 +16,8 @@
     "scan": "tsx packages/cli/src/main.ts scan",
     "dry-run": "tsx packages/cli/src/main.ts dry-run",
     "eval": "tsx packages/cli/src/main.ts eval",
-    "start": "tsx packages/cli/src/main.ts start"
+    "start": "tsx packages/cli/src/main.ts start",
+    "status": "tsx packages/cli/src/main.ts status"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- LaunchAgent de UM perfil. Não edite o resultado à mão: rode deploy/install-launchd.sh <id>, que preenche os {{...}}.
+     caffeinate -i mantém o Mac acordado enquanto o processo roda. O próprio `start` tem trava de instância única
+     (data/<id>/.start.lock); se já houver outra instância ele sai com código 75 e o launchd tenta de novo após ThrottleInterval.
+     KeepAlive reinicia depois de uma falha (código != 0), mas não depois de uma parada limpa (código 0, SIGINT/SIGTERM). -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.auto-curator.{{ID}}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-i</string>
+    <string>{{BUN}}</string>
+    <string>run</string>
+    <string>start</string>
+    <string>--profile</string>
+    <string>{{ID}}</string>
+  </array>
+  <key>WorkingDirectory</key><string>{{REPO}}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>{{PATH}}</string>
+    <key>HOME</key><string>{{HOME}}</string>
+    <key>CURADOR_DATA_DIR</key><string>{{REPO}}/data/{{ID}}</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ExitTimeOut</key><integer>25</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>{{REPO}}/data/{{ID}}/launchd.log</string>
+  <key>StandardErrorPath</key><string>{{REPO}}/data/{{ID}}/launchd.log</string>
+</dict>
+</plist>

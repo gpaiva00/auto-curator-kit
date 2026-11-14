@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:ht="https://trends.google.com/trending/rss" version="2.0">
+  <channel>
+    <title>Google Trends - Em alta</title>
+    <description>Em alta no Brasil</description>
+    <link>https://trends.google.com/trending?geo=BR</link>
+    <item>
+      <title>Influencer Exemplo 1</title>
+      <ht:approx_traffic>200 mil+</ht:approx_traffic>
+      <description></description>
+      <link>https://trends.google.com/trending/rss?geo=BR</link>
+      <pubDate>Sat, 07 Nov 2026 14:30:00 -0300</pubDate>
+      <ht:picture>https://encrypted-tbn0.gstatic.com/images?q=tbn:abc</ht:picture>
+      <ht:picture_source>Exemplo Portal</ht:picture_source>
+      <ht:news_item>
+        <ht:news_item_title>Exemplo 1 anuncia turn&#234; nacional</ht:news_item_title>
+        <ht:news_item_snippet>O influenciador anunciou 12 datas</ht:news_item_snippet>
+        <ht:news_item_url>https://portal.example.com/exemplo-1-turne</ht:news_item_url>
+        <ht:news_item_source>Exemplo Portal</ht:news_item_source>
+      </ht:news_item>
+      <ht:news_item>
+        <ht:news_item_title><![CDATA[Fãs lotam venda de ingressos & derrubam site]]></ht:news_item_title>
+        <ht:news_item_snippet>Venda comecou as 10h</ht:news_item_snippet>
+        <ht:news_item_url>https://noticias.example.com/ingressos</ht:news_item_url>
+        <ht:news_item_source>Noticias Exemplo</ht:news_item_source>
+      </ht:news_item>
+    </item>
+    <item>
+      <title>flamengo x palmeiras</title>
+      <ht:approx_traffic>1 mi+</ht:approx_traffic>
+      <description></description>
+      <link>https://trends.google.com/trending/rss?geo=BR</link>
+      <pubDate>Sat, 07 Nov 2026 16:00:00 -0300</pubDate>
+      <ht:news_item>
+        <ht:news_item_title>Flamengo e Palmeiras empatam</ht:news_item_title>
+        <ht:news_item_snippet>Jogo movimentado</ht:news_item_snippet>
+        <ht:news_item_url>https://esportes.example.com/fla-pal</ht:news_item_url>
+        <ht:news_item_source>Esportes Exemplo</ht:news_item_source>
+      </ht:news_item>
+    </item>
+    <item>
+      <title>Influencer Exemplo 2</title>
+      <ht:approx_traffic>50+</ht:approx_traffic>
+      <pubDate>Sat, 07 Nov 2026 12:10:00 -0300</pubDate>
+    </item>
+    <item>
+      <title>cotacao dolar hoje</title>
+      <ht:approx_traffic>5.000+</ht:approx_traffic>
+      <pubDate>Sat, 07 Nov 2026 09:00:00 -0300</pubDate>
+      <ht:news_item>
+        <ht:news_item_title>Dolar fecha em alta</ht:news_item_title>
+        <ht:news_item_url>https://economia.example.com/dolar</ht:news_item_url>
+        <ht:news_item_source>Economia Exemplo</ht:news_item_source>
+      </ht:news_item>
+    </item>
+  </channel>
+</rss>

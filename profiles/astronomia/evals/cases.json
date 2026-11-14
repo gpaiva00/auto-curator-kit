@@ -1,0 +1,98 @@
+[
+  {
+    "name": "solid_nasa_discovery",
+    "item": {
+      "id": "a01",
+      "source": "rss:NASA",
+      "sourceUrl": "https://www.nasa.gov/news-release/webb-finds-earth-size-planet/",
+      "author": "NASA",
+      "title": "NASA's Webb Telescope Finds Earth-Size Planet With Possible Atmosphere",
+      "text": "NASA's James Webb Space Telescope has observed an Earth-size rocky planet about 40 light-years away. Observations show the planet may have a thin atmosphere, although more data is needed to confirm it. The results were announced Wednesday and published in a peer-reviewed journal.",
+      "media": [{ "type": "image", "url": "https://www.nasa.gov/wp-content/uploads/webb-planet.jpg" }],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "publish", "alsoAcceptable": ["needs_human"] }
+  },
+  {
+    "name": "astrology_horoscope_claim",
+    "item": {
+      "id": "a02",
+      "source": "google-news",
+      "sourceUrl": "https://example.com/horoscopo-lua-cheia",
+      "author": "Portal Exemplo",
+      "title": "Lua cheia em Touro muda a sorte de três signos esta semana",
+      "text": "A Lua cheia em Touro traz uma energia poderosa e vai transformar o amor e o dinheiro de três signos. Veja se o seu está na lista e aproveite o alinhamento dos planetas.",
+      "media": [{ "type": "image" }],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "skip", "alsoAcceptable": ["needs_human"], "mustFlag": ["pseudoscience"] }
+  },
+  {
+    "name": "alien_signal_rumor",
+    "item": {
+      "id": "a03",
+      "source": "google-news",
+      "sourceUrl": "https://example.com/sinal-misterioso",
+      "author": "Blog Cosmos Secreto",
+      "title": "Sinal misterioso do espaço pode ser de civilização alienígena, dizem fontes",
+      "text": "Fontes ligadas a um observatório afirmam que um sinal de rádio detectado esta semana pode ser de uma civilização avançada. A NASA estaria escondendo os dados. Nenhuma instituição confirmou.",
+      "media": [],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "needs_human", "mustFlag": ["pseudoscience", "unverified"] }
+  },
+  {
+    "name": "old_item_anniversary",
+    "item": {
+      "id": "a04",
+      "source": "rss:Universe Today",
+      "sourceUrl": "https://example.com/hubble-anniversary",
+      "author": "Universe Today",
+      "title": "Há 30 anos, o Hubble mostrava ao mundo as primeiras imagens do espaço profundo",
+      "text": "Relembrando: em 1996, o Telescópio Espacial Hubble divulgou o Campo Profundo, uma imagem que mudou a astronomia. Três décadas depois, a imagem continua sendo referência.",
+      "media": [{ "type": "image" }],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "needs_human", "alsoAcceptable": ["skip"], "mustFlag": ["outdated"] }
+  },
+  {
+    "name": "single_source_rumor_about_mission",
+    "item": {
+      "id": "a05",
+      "source": "google-news",
+      "sourceUrl": "https://example.com/missao-secreta",
+      "author": "Portal Espaço Já",
+      "title": "Agência teria cancelado missão a Marte, diz fonte anônima",
+      "text": "Segundo uma fonte anônima, a agência espacial teria decidido cancelar a missão tripulada a Marte por falta de verba. Nem a agência nem o governo comentaram o assunto.",
+      "media": [],
+      "postedAt": "2026-11-07T13:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "needs_human", "mustFlag": ["unverified"] }
+  },
+  {
+    "name": "meteor_shower_visible_from_brazil",
+    "item": {
+      "id": "a06",
+      "source": "rss:Olhar Digital Ciência e Espaço",
+      "sourceUrl": "https://example.com/geminideas-2026",
+      "author": "Olhar Digital",
+      "title": "Chuva de meteoros Geminídeas atinge o pico nesta semana e pode ser vista no Brasil",
+      "text": "A chuva de meteoros Geminídeas atinge o pico na madrugada de 14 de dezembro e pode render até 120 meteoros por hora em condições ideais. Segundo o Observatório Nacional, a observação deve ser feita longe das luzes da cidade, e a melhor hora é depois da meia-noite.",
+      "media": [{ "type": "image" }],
+      "postedAt": "2026-12-12T10:00:00Z",
+      "engagement": {},
+      "extra": {}
+    },
+    "expected": { "verdict": "publish", "alsoAcceptable": ["needs_human"] }
+  }
+]

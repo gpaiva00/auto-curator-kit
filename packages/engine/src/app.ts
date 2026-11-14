@@ -1,0 +1,315 @@
+import {
+  KitError,
+  composeText,
+  errMsg,
+  silentLogger,
+  systemClock,
+  STATUSES,
+  type BotActions,
+  type Clock,
+  type Destination,
+  type DestinationOutcome,
+  type Item,
+  type LlmPort,
+  type Logger,
+  type Notifier,
+  type PreparedMedia,
+  type Preparer,
+  type PromptProvider,
+  type Publication,
+  type Publisher,
+  type RawItem,
+  type Source,
+  type StatusSnapshot,
+} from "@auto-curator/contracts";
+import type { ProfileBundle } from "./config.js";
+import * as jobs from "./jobs.js";
+import { loadVeto, queueGate, type VetoRules } from "./policy.js";
+import type { Store } from "./store.js";
+
+export interface AppDeps {
+  bundle: ProfileBundle;
+  store: Store;
+  llm: LlmPort;
+  prompts: PromptProvider;
+  sources: Source[];
+  preparer: Preparer;
+  /** Keyed by publisher name: "buffer" (and any other automatic publisher). "manual" needs no entry. */
+  publishers: Record<string, Publisher>;
+  notifier?: Notifier;
+  clock?: Clock;
+  logger?: Logger;
+  env?: NodeJS.ProcessEnv;
+  /** Preloaded veto rules; default: loaded from editorial.vetoFile. */
+  veto?: VetoRules;
+}
+
+export interface TickResult {
+  triage: jobs.TriageResult;
+  curate: jobs.CurateResult;
+  prepare: jobs.PrepareResult;
+  present: jobs.PresentResult;
+  expired: number;
+}
+
+const PAUSE_KEY = "paused";
+
+/** Media shown/published on a destination, or undefined when the destination does not apply to this item. */
+export function mediaForDestination(item: Item, dest: Destination): PreparedMedia[] | undefined {
+  const eligible = item.prepared.filter((m) => (!m.platform || m.platform === dest.platform) && (dest.only === "any" || m.type === dest.only));
+  // A platform-specific variant (e.g. the 9:16 TikTok video) replaces the generic media instead of adding to it.
+  const variants = eligible.filter((m) => m.platform === dest.platform);
+  const mine = variants.length ? variants : eligible.filter((m) => !m.platform);
+  if (dest.only === "any") return mine;
+  return mine.length ? mine : undefined;
+}
+
+export class App implements BotActions {
+  readonly bundle: ProfileBundle;
+  readonly store: Store;
+  private readonly clock: Clock;
+  private readonly log: Logger;
+  private readonly jobDeps: jobs.JobDeps;
+  private chain: Promise<unknown> = Promise.resolve();
+
+  constructor(private readonly d: AppDeps) {
+    this.bundle = d.bundle;
+    this.store = d.store;
+    this.clock = d.clock ?? systemClock;
+    this.log = d.logger ?? silentLogger;
+    this.jobDeps = {
+      bundle: d.bundle,
+      store: d.store,
+      llm: d.llm,
+      prompts: d.prompts,
+      preparer: d.preparer,
+      notifier: d.notifier,
+      veto: d.veto ?? loadVeto(d.bundle.profileDir, d.bundle.profile.editorial, this.log),
+      clock: this.clock,
+      logger: this.log,
+      env: d.env ?? process.env,
+      isPaused: () => this.isPaused(),
+    };
+  }
+
+  /** Resolves once every queued pipeline step has finished (use before closing the store). */
+  async idle(): Promise<void> {
+    let c: Promise<unknown>;
+    do {
+      c = this.chain;
+      await c;
+    } while (c !== this.chain);
+  }
+
+  /** Pipeline steps never overlap (SQLite single writer, predictable LLM spend). */
+  private exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    const p = this.chain.then(fn, fn);
+    this.chain = p.catch(() => undefined);
+    return p;
+  }
+
+  // ------------------------------------------------------------ pipeline
+
+  ingest(): Promise<jobs.IngestResult> {
+    return this.exclusive(() => jobs.ingest(this.jobDeps, this.d.sources));
+  }
+
+  async ingestNow(): Promise<string> {
+    return jobs.summarizeIngest(await this.ingest());
+  }
+
+  /** triage -> curate -> prepare -> present (plus expiry of old items). */
+  tick(): Promise<TickResult> {
+    return this.exclusive(async () => {
+      const j = this.jobDeps;
+      const expired = jobs.expire(j);
+      if (this.isPaused()) {
+        this.log.info("tick: pausado");
+        const z = { scored: 0, skipped: 0, llmCalls: 0 };
+        return { triage: z, curate: { curated: 0, skipped: 0, failed: 0, held: 0 }, prepare: { prepared: 0, failed: 0 }, present: { presented: 0, held: 0 }, expired };
+      }
+      const triage = await jobs.triage(j);
+      const curate = await jobs.curate(j);
+      const prepare = await jobs.prepare(j);
+      const present = await jobs.present(j);
+      return { triage, curate, prepare, present, expired };
+    });
+  }
+
+  async runPipeline(): Promise<void> {
+    await this.tick();
+  }
+
+  // ------------------------------------------------------------ manual input
+
+  async addManual(input: string): Promise<{ item?: Item; error?: string }> {
+    const text = input.trim();
+    if (!text) return { error: "Nada para adicionar: envie um link ou um texto." };
+    let raw: RawItem | undefined;
+    let lastError: string | undefined;
+    for (const s of this.d.sources) {
+      if (!s.fromInput) continue;
+      try {
+        raw = await s.fromInput(text, jobs.sourceContext(this.jobDeps, s));
+      } catch (e) {
+        lastError = errMsg(e);
+        this.log.warn(`addManual: ${s.name} falhou: ${lastError}`);
+      }
+      if (raw) break;
+    }
+    if (!raw) {
+      if (/^https?:\/\/\S+$/i.test(text)) return { error: lastError ?? "Nenhuma fonte configurada sabe ler esse link. Cole o texto do conteúdo." };
+      raw = { dedupeKey: `text:${text.replace(/\s+/g, " ").toLowerCase()}`, origin: "manual", source: "manual", author: "", text };
+    }
+    const item = this.store.insertRaw({ ...raw, origin: "manual" }, { score: 100, reason: "manual" });
+    return item ? { item } : { error: "Esse item já foi adicionado." };
+  }
+
+  // ------------------------------------------------------------ approval flow
+
+  /** 🔁 Refazer: re-runs the curator with feedback, prepares and re-sends right away (gate ignored). */
+  regenerate(id: string, feedback?: string): Promise<void> {
+    return this.exclusive(async () => {
+      const item = this.mustGet(id, "pending_approval");
+      const draft = await jobs.curateOne(this.jobDeps, item, feedback);
+      this.store.recordApproval(id, "regenerate", feedback);
+      const r = await jobs.applyDraft(this.jobDeps, item, draft);
+      if (r === "skipped") return;
+      const ready = await jobs.prepareOne(this.jobDeps, this.store.get(id)!);
+      await jobs.presentOne(this.jobDeps, ready);
+    });
+  }
+
+  /** After edits: re-prepare media and re-send the card (old cards are left to the bot). */
+  reprepare(id: string): Promise<void> {
+    return this.exclusive(async () => {
+      const item = this.mustGet(id, "pending_approval");
+      this.store.transition(id, "ready", "reprocessar mídia");
+      const ready = await jobs.prepareOne(this.jobDeps, { ...this.store.get(id)!, draft: item.draft });
+      await jobs.presentOne(this.jobDeps, ready);
+    });
+  }
+
+  async reject(id: string, reasonCode: string): Promise<void> {
+    this.mustGet(id, "pending_approval");
+    this.store.recordApproval(id, "reject", reasonCode);
+    this.store.transition(id, "rejected", `rejeitado: ${reasonCode}`);
+  }
+
+  async approve(id: string): Promise<DestinationOutcome[]> {
+    const item = this.mustGet(id, "pending_approval");
+    if (!item.draft) throw new KitError(`Item ${id} sem rascunho`, "NO_DRAFT");
+    this.store.recordApproval(id, "approve");
+    this.store.transition(id, "approved", "aprovado");
+    const text = composeText(item.draft, { credit: this.bundle.profile.editorial.credit });
+    const outcomes: DestinationOutcome[] = [];
+    let attempted = 0;
+    let buffered = 0;
+    const dests = this.bundle.profile.destinations;
+
+    for (const dest of dests) {
+      const media = mediaForDestination(item, dest);
+      if (!media) continue; // destination does not take this kind of media
+      attempted++;
+      if (dest.publisher === "buffer" && this.store.publicationsToday(dest.platform) >= dest.dailyCap) {
+        const note = `limite diário de ${dest.dailyCap} atingido`;
+        this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });
+        outcomes.push({ platform: dest.platform, kind: "manual", error: note });
+        continue;
+      }
+      if (dest.publisher === "buffer") {
+        const pub = this.d.publishers.buffer;
+        try {
+          if (!pub) throw new KitError("publisher buffer não configurado", "NO_PUBLISHER");
+          const res = await pub.publish({ item, destination: dest, text, firstComment: item.draft.firstComment, media });
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "scheduled", externalId: res.externalId, mode: res.mode, scheduledAt: res.scheduledAt });
+          outcomes.push({ platform: dest.platform, kind: "buffer", mode: res.mode, scheduledAt: res.scheduledAt, droppedMedia: res.droppedMedia });
+          buffered++;
+          continue;
+        } catch (e) {
+          this.log.warn(`buffer falhou (${dest.platform}): ${errMsg(e)}`);
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "failed", error: errMsg(e) });
+          outcomes.push({ platform: dest.platform, kind: "failed", error: errMsg(e) });
+          continue;
+        }
+      }
+      this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual" });
+      outcomes.push({ platform: dest.platform, kind: "manual" });
+    }
+    if (attempted === 0) {
+      // No destination takes this media: keep it approved and let the human post by hand on the first destination.
+      const first = dests[0]!;
+      const note = "nenhum destino aceita a mídia deste item; poste manualmente";
+      this.store.addPublication({ itemId: id, platform: first.platform, publisher: "manual", status: "manual", error: note });
+      outcomes.push({ platform: first.platform, kind: "manual", error: note });
+    } else if (buffered === attempted) {
+      this.store.transition(id, "published", "agendado no Buffer");
+    }
+    return outcomes;
+  }
+
+  async markPublished(id: string, platform: string): Promise<void> {
+    const item = this.store.get(id);
+    if (!item) throw new KitError(`Item ${id} não encontrado`, "NOT_FOUND");
+    if (item.status === "published") return;
+    if (item.status !== "approved") throw new KitError(`Item ${id} está em ${item.status}, não em approved`, "ILLEGAL_STATE");
+    const pubs = this.store.publicationsOf(id);
+    const open = pubs.find((p) => p.platform === platform && (p.status === "manual" || p.status === "failed"));
+    if (!open) throw new KitError(`Nenhuma publicação manual pendente em ${platform}`, "NOT_FOUND");
+    this.store.updatePublication(open.id, { status: "published" });
+    this.store.recordApproval(id, "published_manual", platform);
+    const left = this.store.publicationsOf(id).some((p) => p.status === "manual" || p.status === "failed");
+    if (!left) this.store.transition(id, "published", "publicado manualmente");
+  }
+
+  // ------------------------------------------------------------ status
+
+  async agenda(): Promise<{ platform: string; label: string; scheduledAt?: string }[]> {
+    const rows = new Map<string, { platform: string; label: string; scheduledAt?: string }>();
+    const local = this.store.listPublications({ status: ["scheduled"], limit: 50 });
+    for (const p of local) {
+      const label = this.store.get(p.itemId)?.draft?.headline ?? p.itemId;
+      rows.set(p.externalId ?? p.id, { platform: p.platform, label, scheduledAt: p.scheduledAt ?? undefined });
+    }
+    for (const pub of Object.values(this.d.publishers)) {
+      if (!pub.listScheduled) continue;
+      try {
+        for (const s of await pub.listScheduled()) rows.set(s.externalId, { platform: s.platform, label: s.text.replace(/\s+/g, " ").slice(0, 70), scheduledAt: s.scheduledAt });
+      } catch (e) {
+        this.log.warn(`agenda: ${pub.name} falhou: ${errMsg(e)}`);
+      }
+    }
+    return [...rows.values()].sort((a, b) => (a.scheduledAt ?? "9").localeCompare(b.scheduledAt ?? "9"));
+  }
+
+  isPaused(): boolean {
+    return this.store.kvGet(PAUSE_KEY) === "1";
+  }
+  setPaused(p: boolean): void {
+    if (p) this.store.kvSet(PAUSE_KEY, "1");
+    else this.store.kvDel(PAUSE_KEY);
+  }
+
+  status(): StatusSnapshot {
+    const profile = this.bundle.profile;
+    const counts = this.store.countsByStatus();
+    return {
+      profileName: profile.name,
+      paused: this.isPaused(),
+      counts: Object.fromEntries(STATUSES.flatMap((s) => (counts[s] ? [[s, counts[s]]] : []))),
+      spendBRL: this.store.monthSpendBRL(),
+      budgetBRL: this.bundle.models.monthlyBudgetBRL,
+      presentedToday: this.store.presentedToday(),
+      dailyApprovalCap: profile.pipeline.dailyApprovalCap,
+      gate: queueGate({ store: this.store, profile, models: this.bundle.models, paused: false, stage: "curate" }),
+    };
+  }
+
+  private mustGet(id: string, expected: Item["status"]): Item {
+    const item = this.store.get(id);
+    if (!item) throw new KitError(`Item ${id} não encontrado`, "NOT_FOUND");
+    if (item.status !== expected) throw new KitError(`Item ${id} já está em ${item.status}`, "ILLEGAL_TRANSITION");
+    return item;
+  }
+}
+

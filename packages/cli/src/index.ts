@@ -1,0 +1,9 @@
+export { run, COMMANDS, HELP } from "./main.js";
+export { parseCommandLine } from "./args.js";
+export { resolveProfile, listProfileIds, defaultProfilesRoot } from "./profile.js";
+export { buildRuntime, parseChatIds, uiConfig, buildSources, type Runtime, type BuildOptions } from "./wire.js";
+export { scaffoldProfile, type CreateOptions } from "./commands/create.js";
+export { runChecks, formatCheck, type Check } from "./commands/doctor.js";
+export { runDryRun } from "./commands/dryrun.js";
+export { checkCase, EvalCase, EvalFile } from "./evalMatch.js";
+export { acquireLock, AlreadyRunningError } from "./lock.js";

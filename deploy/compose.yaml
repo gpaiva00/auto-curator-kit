@@ -1,0 +1,44 @@
+# One service per profile (one process, one bot, one database, one budget each). Run from the repo root:
+#   docker compose -f deploy/compose.yaml up -d --build
+#   docker compose -f deploy/compose.yaml logs -f astronomia
+#
+# Each profile reads its secrets from profiles/<id>/.env (never committed). To add a profile:
+# copy the "astronomia" service, change the service name and PROFILE, and add its data volume.
+
+x-curator: &curator
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  image: auto-curator
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 20s
+  healthcheck:
+    # process-level only; the Telegram bot is the real liveness signal
+    test: ["CMD-SHELL", "node -e \"process.exit(0)\""]
+    interval: 5m
+
+services:
+  astronomia:
+    <<: *curator
+    container_name: curator-astronomia
+    environment:
+      PROFILE: astronomia
+      CURADOR_DATA_DIR: /data
+    volumes:
+      - ../profiles:/app/profiles:ro        # profile.json, style-guide.md, prompts/, evals/ and .env
+      - astronomia-data:/data               # curator.db, renders, downloads
+
+  # outro-perfil:
+  #   <<: *curator
+  #   container_name: curator-outro-perfil
+  #   environment:
+  #     PROFILE: outro-perfil
+  #     CURADOR_DATA_DIR: /data
+  #   volumes:
+  #     - ../profiles:/app/profiles:ro
+  #     - outro-perfil-data:/data
+
+volumes:
+  astronomia-data:
+  # outro-perfil-data:

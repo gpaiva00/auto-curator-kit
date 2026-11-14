@@ -1,3 +1,5 @@
+Status: fases 0, 1, 2 (perfil linkedin-exemplo) e 4 (perfil astronomia) implementadas; fase 3 (migração dos dados do perfil-noticias) pendente.
+
 # Plano: `auto-curator-kit` — um motor para perfis curados por IA com aprovação no Telegram
 
 Rascunho de 2026-11-14, a partir de `perfil-noticias` (~14 mil linhas TS, 338 testes) e `linkedin-curador` (~2,9 mil linhas, 33 testes).
@@ -85,7 +87,7 @@ auto-curator-kit/                        (monorepo, bun workspaces)
     news-card/          herdado do perfil-noticias (fofoca, card + vídeo, Instagram/TikTok)
     thought-leader/     herdado do linkedin-curador (texto + mídia original, LinkedIn)
   profiles/             (fora do repo público, ou exemplos)
-    cviuisso/   linkedin-gabriel/   astronomia/
+    noticias-exemplo/   linkedin-exemplo/   astronomia/
 ```
 
 ### 2.1 Um perfil é uma pasta
@@ -288,7 +290,7 @@ slots de agendamento, render como plugin, downloader com limiter, healthcheck, `
 |---|---|---|
 | 0. Contratos | `Draft`, `Item`, estados, `Source`, `Publisher`, `Preparer`, layout do Telegram | snapshots das mensagens aprovados por você |
 | 1. Motor | `engine` + `telegram` + `cli`, a partir do código do linkedin-curador (menor) + policy/fila/fontes do perfil-noticias | testes dos dois projetos que cobrem o motor passando no pacote |
-| 2. LinkedIn no motor | `linkedin-curador` vira `profiles/linkedin-gabriel` + fonte `x-feed` | **zero** código no perfil; mesmo comportamento |
+| 2. LinkedIn no motor | `linkedin-curador` vira `profiles/linkedin-exemplo` + fonte `x-feed` | **zero** código no perfil; mesmo comportamento |
 | 3. Notícias no motor | template `news-card` (render, radar como fonte de trends, multi-plataforma, métricas); migração do SQLite `findings+posts → items` | rodando lado a lado 1 semana sem regressão |
 | 4. Prova | perfil de astronomia criado só com `auto-curator create` + config | nenhuma mudança no motor |
 | 5. Abrir | README, exemplos sem dados pessoais, licença, CI | — |

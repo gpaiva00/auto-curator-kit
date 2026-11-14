@@ -63,6 +63,7 @@
       "dependencies": {
         "@auto-curator/contracts": "workspace:*",
         "playwright-core": "^1.49.0",
+        "zod": "^3.25.0",
       },
     },
     "packages/telegram": {
