@@ -3,10 +3,13 @@
 import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { ROOT } from "./api-report.mjs";
 
 const KEEP = process.argv.includes("--keep");
+// --tgz <arquivo>: instala exatamente este .tgz (o mesmo que vira asset da release), sem build nem pack novo.
+const TGZ_AT = process.argv.indexOf("--tgz");
+const PREPACKED = TGZ_AT > 0 ? resolve(process.argv[TGZ_AT + 1]) : undefined;
 const FLOOR = "22.13.0";
 const OLD = "22.12.0";
 const log = (msg) => console.log(`[smoke] ${msg}`);
@@ -97,8 +100,9 @@ function checkDoctorOk(res) {
 }
 
 function checkPackContents() {
-  const out = sh("npm", ["pack", "--dry-run", "--json"], { cwd: ROOT });
-  const files = JSON.parse(out)[0].files.map((f) => f.path);
+  const files = PREPACKED
+    ? sh("tar", ["-tzf", PREPACKED]).split("\n").filter(Boolean).map((p) => p.replace(/^package\//, ""))
+    : JSON.parse(sh("npm", ["pack", "--dry-run", "--json"], { cwd: ROOT }))[0].files.map((f) => f.path);
   const need = ["dist/index.js", "dist/bin.js", "dist/runtime.js", "dist/impl/index.js", "dist/entries/index.d.ts", "templates/news-card/template.json", "scripts/chrome-reader.sh", "profiles/astronomia/profile.json"];
   for (const n of need) must(files.includes(n), `pacote sem ${n}`);
   const forbidden = files.filter((f) => /^(packages|entries|tools|api)\//.test(f) || /(^|\/)\.env$|\.env\.(?!example$)/.test(f));
@@ -123,16 +127,18 @@ function consumerVariant(work, tgz, variant) {
 }
 
 function main() {
-  log("build");
-  sh(process.execPath, ["tools/build.mjs"], { cwd: ROOT, stdio: "inherit" });
+  if (!PREPACKED) {
+    log("build");
+    sh(process.execPath, ["tools/build.mjs"], { cwd: ROOT, stdio: "inherit" });
+  }
   checkPackContents();
 
   const work = mkdtempSync(join(tmpdir(), "ac-smoke-"));
   const packDir = join(work, "pack");
   mkdirSync(packDir);
   try {
-    const tgzName = sh("npm", ["pack", "--pack-destination", packDir], { cwd: ROOT }).trim().split("\n").pop();
-    const tgz = join(packDir, tgzName);
+    const tgz = PREPACKED ?? join(packDir, sh("npm", ["pack", "--pack-destination", packDir], { cwd: ROOT }).trim().split("\n").pop());
+    const tgzName = basename(tgz);
     log(`tarball: ${tgzName}`);
 
     for (const variant of ["auto", "types22"]) {
