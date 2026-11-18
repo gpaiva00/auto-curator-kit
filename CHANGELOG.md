@@ -2,7 +2,7 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
-## [Não lançado]
+## [0.2.0] - 2026-11-18
 
 ### Quebra
 
@@ -16,6 +16,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
   - Como migrar: mova `data/<id>` para `<perfil>/data`, ou defina `CURADOR_DATA_DIR` com uma pasta fora do pacote. Com o kit instalado, o perfil é explícito (`--profile <caminho>` ou `CURADOR_PROFILE`); busca por id exige `PROFILES_DIR`.
 - **Perfil ou dados dentro de `node_modules` são recusados** antes de criar o banco.
   - Como migrar: copie o perfil para uma pasta sua e aponte `--profile` para ela.
+- **`style-guide.md` e `prompts/` são exigidos na carga.** Perfil sem eles não carrega, e a mensagem mostra o caminho.
+  - Como migrar: crie `style-guide.md` no perfil e os prompts `triage.md` e `curator.md` (no perfil ou no template).
 - **Piso do Node é 22.13.0** (ou 23.4.0+). Versões anteriores não têm `node:sqlite` sem flag.
   - Como migrar: atualize o Node. Bun não é suportado no consumidor.
 - **`@types/node` é peer (`>=22`), não dependência.** Se o projeto não o tiver, o npm instala automaticamente.
@@ -33,7 +35,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 - **`kitProfileVersion`** no `profile.json`. Versão maior que a suportada é erro; menor gera aviso com o link da migração.
 - **`ProfileBundle.warnings`**: avisos de carga que não impedem o uso.
 - **Aviso na aprovação** quando um destino com mídia não tem host: o cartão do Telegram mostra a linha, além do doctor.
-- **`style-guide.md` e prompts** são exigidos na carga, com caminho na mensagem.
 - **Binário `auto-curator`** (`dist/bin.js`).
 - **Checagem de runtime** antes de carregar o motor: Bun e Node abaixo de 22.13 recebem mensagem em português e código 1.
 - **`BuildOptions.llm`**: substitui o cliente de LLM (para testes, sem rede).
@@ -47,3 +48,4 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 ### Corrigido
 
 - A trava de escrita compara caminhos reais (symlinks resolvidos), inclusive para pastas que ainda não existem.
+- A linha de falha do Buffer não repete o prefixo "Buffer:" ("o Buffer falhou (o Threads aceita...)").

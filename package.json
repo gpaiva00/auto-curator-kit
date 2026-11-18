@@ -1,6 +1,6 @@
 {
   "name": "auto-curator-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/entries/index.d.ts",
@@ -47,7 +47,9 @@
     "status": "tsx packages/cli/src/main.ts status",
     "build": "node tools/build.mjs",
     "smoke": "node tools/smoke.mjs",
-    "release": "node tools/release.mjs"
+    "release": "node tools/release.mjs",
+    "release:publish": "node tools/release-publish.mjs",
+    "release:verify": "node tools/release-verify.mjs"
   },
   "dependencies": {
     "zod": "^3.25.0",
