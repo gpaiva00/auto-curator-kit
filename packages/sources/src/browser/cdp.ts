@@ -1,6 +1,7 @@
 import type { SourceContext } from "@auto-curator/contracts";
 import { RateLimiter, type LimiterOptions } from "./limiter.js";
 import { BrowserError } from "./errors.js";
+import { launchDedicatedChrome } from "./launch.js";
 
 export { BrowserError, isStopError } from "./errors.js";
 export { RateLimiter } from "./limiter.js";
@@ -68,6 +69,8 @@ export interface CdpReaderOptions {
   random?: () => number;
   /** Test seam: replaces playwright's connectOverCDP. */
   connect?: (cdpUrl: string) => Promise<Connection>;
+  /** Opens the dedicated Chrome when its port is down (see launch.ts). Never throws. */
+  launch?: () => Promise<void>;
 }
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -91,6 +94,17 @@ export class CdpPageReader implements PageReader {
 
   async isAvailable(): Promise<boolean> {
     if (this.o.connect) return true;
+    if (await this.probe()) return true;
+    if (!this.o.launch) return false;
+    // one launch at a time, however many reads ask at once
+    this.launching ??= this.o.launch().finally(() => (this.launching = undefined));
+    await this.launching;
+    return this.probe();
+  }
+
+  private launching?: Promise<void>;
+
+  private async probe(): Promise<boolean> {
     try {
       const r = await this.f(new URL("/json/version", this.o.cdpUrl), { signal: AbortSignal.timeout(2500) });
       return r.ok;
@@ -189,7 +203,15 @@ export interface OpenBrowserOptions {
 
 /** Shared entry point: connects to the dedicated Chrome (BROWSER_CDP_URL, default http://127.0.0.1:9222) with limits persisted in `ctx.state`. */
 export function openBrowser(ctx: Pick<SourceContext, "env" | "state">, o: OpenBrowserOptions): BrowserSession {
-  const reader = o.reader ?? new CdpPageReader({ cdpUrl: resolveCdpUrl(ctx.env), fetch: o.fetch, sleep: o.sleep });
+  const cdpUrl = resolveCdpUrl(ctx.env);
+  const reader =
+    o.reader ??
+    new CdpPageReader({
+      cdpUrl,
+      fetch: o.fetch,
+      sleep: o.sleep,
+      launch: () => launchDedicatedChrome({ cdpUrl, name: ctx.env.CHROME_READER_NAME, script: ctx.env.CHROME_READER_SCRIPT }),
+    });
   const limiter = new RateLimiter({ ...o.limits, store: ctx.state, key: o.stateKey ?? "browser.limiter", sleep: o.sleep, ...o.limiterOverrides });
   return new BrowserSession(reader, limiter);
 }

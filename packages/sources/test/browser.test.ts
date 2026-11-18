@@ -85,6 +85,18 @@ describe("CdpPageReader", () => {
     await expect(r.read({ url: "https://x.com", script: "1" })).rejects.toMatchObject({ kind: "NOT_AVAILABLE" });
   });
 
+  it("opens the dedicated Chrome once when the port is down, then reads", async () => {
+    let up = false;
+    let launches = 0;
+    const r = new CdpPageReader({
+      cdpUrl: "http://127.0.0.1:9222",
+      fetch: (async () => { if (!up) throw new Error("ECONNREFUSED"); return new Response("{}", { status: 200 }); }) as typeof fetch,
+      launch: async () => { launches++; await new Promise((res) => setTimeout(res, 10)); up = true; },
+    });
+    expect(await Promise.all([r.isAvailable(), r.isAvailable(), r.isAvailable()])).toEqual([true, true, true]);
+    expect(launches).toBe(1);
+  });
+
   it("rejects a non-loopback debugger URL", () => {
     expect(() => new CdpPageReader({ cdpUrl: "http://example.com:9222" })).toThrow();
   });
