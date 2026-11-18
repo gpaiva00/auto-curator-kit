@@ -13,6 +13,8 @@ import {
 const ENDPOINT = "https://api.buffer.com";
 const TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_AFTER_SEC = 900;
+/** Threads limita o post a 500 caracteres (regra do linkedin-curador, L1). */
+export const THREADS_MAX_CHARS = 500;
 
 const CREATE_POST = `
 mutation CreatePost($input: CreatePostInput!) {
@@ -68,6 +70,9 @@ export class BufferPublisher implements Publisher {
   async publish(req: PublishRequest): Promise<PublishResult> {
     const platform = req.destination.platform;
     const mode = req.destination.mode ?? "draft";
+    if (platform === "threads" && req.text.length > THREADS_MAX_CHARS) {
+      throw new PublishError(`Buffer: o Threads aceita até ${THREADS_MAX_CHARS} caracteres (o post tem ${req.text.length}). Encurte o texto ou tire o destino do Threads.`);
+    }
     const plan = this.planMedia(req);
     if (platform === "tiktok" && !plan.attach.some((m) => m.type === "video")) {
       throw new PublishError("Buffer: TikTok exige um vídeo anexado, e nenhum vídeo compatível foi enviado.");
