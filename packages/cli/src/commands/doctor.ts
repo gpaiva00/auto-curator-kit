@@ -9,7 +9,7 @@ import { createSource, resolveCdpUrl } from "@auto-curator/sources";
 import { TelegramApi } from "@auto-curator/telegram";
 import type { CmdCtx } from "../io.js";
 import { brl } from "../format.js";
-import { resolveParts } from "../checks.js";
+import { rawSourceIssues, resolveParts } from "../checks.js";
 import type { KitPlugins } from "../plugins.js";
 import { resolveProfile } from "../profile.js";
 import { parseChatIds } from "../wire.js";
@@ -57,6 +57,8 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
     bundle = loadProfile(profileDir, env);
   } catch (e) {
     add("fail", "profile.json válido", errMsg(e));
+    // as opções das fontes também são conferidas, para listar todas as chaves desconhecidas de uma vez
+    for (const i of rawSourceIssues(profileDir, env)) add("fail", "Fontes", i.text);
     return checks;
   }
   const { profile, template, models } = bundle;

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
   DEFAULT_REJECT_REASONS,
   type ApprovalUiConfig,
+  type LlmPort,
   type Logger,
   type Notifier,
   type Preparer,
@@ -19,7 +20,7 @@ import type { KitPlugins } from "./plugins.js";
 export interface Runtime {
   bundle: ProfileBundle;
   store: Store;
-  llm: LlmClient;
+  llm: LlmPort;
   prompts: FilePromptProvider;
   veto: VetoRules | undefined;
   sources: Source[];
@@ -40,6 +41,8 @@ export interface BuildOptions {
   telegramFetch?: typeof fetch;
   /** Extension points of the project (seção 3): sources, publishers, mediaHost. */
   plugins?: KitPlugins;
+  /** Test seam: LLM substituto, sem rede (o padrão é o cliente real). */
+  llm?: LlmPort;
 }
 
 /** TELEGRAM_ALLOWED_CHAT_IDS (comma/space separated); falls back to the legacy singular TELEGRAM_ALLOWED_CHAT_ID. */
@@ -53,7 +56,7 @@ export function parseUserIds(env: NodeJS.ProcessEnv): string[] {
   return [...new Set((env.TELEGRAM_ALLOWED_USER_IDS?.trim() ?? "").split(/[,\s;]+/).map((x) => x.trim()).filter(Boolean))];
 }
 
-export function uiConfig(bundle: ProfileBundle): ApprovalUiConfig {
+export function uiConfig(bundle: ProfileBundle, noMediaHost: string[] = []): ApprovalUiConfig {
   const p = bundle.profile;
   return {
     profileName: p.name,
@@ -61,6 +64,7 @@ export function uiConfig(bundle: ProfileBundle): ApprovalUiConfig {
     destinations: p.destinations,
     rejectReasons: p.telegram.rejectReasons === "default" ? DEFAULT_REJECT_REASONS : p.telegram.rejectReasons,
     timezone: p.timezone,
+    noMediaHost,
   };
 }
 
@@ -85,7 +89,7 @@ export function buildRuntime(profileDir: string, env: NodeJS.ProcessEnv, opts: B
   mkdirSync(bundle.dataDir, { recursive: true });
   const store = new Store({ path: join(bundle.dataDir, "curator.db"), timezone: profile.timezone });
   try {
-    const llm = new LlmClient({ models: bundle.models, store, env, logger });
+    const llm: LlmPort = opts.llm ?? new LlmClient({ models: bundle.models, store, env, logger });
     const prompts = new FilePromptProvider({ profileDir: bundle.profileDir, templateDir: bundle.templateDir, profile, draftExtraRequired: bundle.template.draftExtraRequired });
     const veto = loadVeto(bundle.profileDir, profile.editorial, logger);
     const sources = buildSources(bundle, env, logger, parts.table);
@@ -110,7 +114,7 @@ export function buildRuntime(profileDir: string, env: NodeJS.ProcessEnv, opts: B
     if (opts.withTelegram) {
       // as variáveis do Telegram já foram conferidas em resolveParts
       const token = env.TELEGRAM_BOT_TOKEN?.trim() as string;
-      bot = new TelegramBot({ api: new TelegramApi(token, opts.telegramFetch), allowedChatIds: parseChatIds(env), allowedUserIds: parseUserIds(env), store, actions: app, ui: uiConfig(bundle), logger });
+      bot = new TelegramBot({ api: new TelegramApi(token, opts.telegramFetch), allowedChatIds: parseChatIds(env), allowedUserIds: parseUserIds(env), store, actions: app, ui: uiConfig(bundle, parts.noMediaHost), logger });
     }
 
     return { bundle, store, llm, prompts, veto, sources, preparer, publishers, app, bot, logger, env, close: () => store.close() };
