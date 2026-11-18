@@ -24,6 +24,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 
 ### Adicionado
 
+- **Threads como destino do Buffer**, com o limite de 500 caracteres (o publicador recusa o post acima disso, sem chamar o Buffer). Sem comentário do LinkedIn; falha isolada por destino.
+- **Testes de paridade com o linkedin-curador**: vídeo como asset no LinkedIn, idade máxima de item, triagem 0-1 para 0-100, duplicata no `/add`, e fallback do LLM em 429, 400 e chave ausente.
 - **Plugins do projeto** em `run` e `buildRuntime`, sem registro global:
   - `plugins.sources`: tipos de fonte do projeto. Tipo repetido do kit é erro, a não ser com `override: true`.
   - `plugins.publishers`: mapa `id → Publisher`, ou função `(env, host) => mapa`.
