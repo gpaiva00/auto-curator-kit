@@ -43,7 +43,6 @@ export const S = {
 
   // flows
   rejectPrompt: (label: string) => `Por que rejeitar ${label}?`,
-  rejected: (label: string, reason: string) => `🗑 ${label} rejeitado: ${reason}.`,
   askBody: (label: string, max: number) => `✏️ Envie o novo texto (máx. ${max} caracteres) para ${label}.\n/cancelar para desistir.`,
   askHeadline: (label: string, max: number) => `🏷 Envie o novo título (máx. ${max} caracteres) para ${label}.\n/cancelar para desistir.`,
   askRegen: (label: string) => `🔁 Como refazer ${label}? Envie a instrução, ou /igual para tentar de novo sem mudar nada.\n/cancelar para desistir.`,

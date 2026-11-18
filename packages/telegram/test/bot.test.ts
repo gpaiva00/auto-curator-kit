@@ -175,11 +175,11 @@ describe("approve flow", () => {
     expect(kb.flat().map((b: any) => b.callback_data).filter(Boolean)).toEqual(["p|p_ab12|linkedin", "p|p_ab12|tiktok"]);
   });
 
-  it("buffer-only approval sends no manual message", async () => {
+  it("buffer-only approval leaves no message in the chat", async () => {
     const t = setup();
     t.store.add(item());
     await t.press("a|p_ab12");
-    expect(t.sent()).toHaveLength(1);
+    expect(t.sent()).toHaveLength(0);
   });
 
   it("guard: already decided item", async () => {
@@ -222,7 +222,7 @@ describe("reject flow", () => {
     await t.press("rj|p_ab12|sem_valor");
     expect(t.actions.log).toEqual(["reject:p_ab12:sem_valor"]);
     expect(t.net.of("deleteMessages")).toHaveLength(1);
-    expect(t.sent().at(-1)).toContain("rejeitado: Sem valor / tema fraco");
+    expect(t.sent()).toHaveLength(0); // rejected post leaves the chat, no confirmation
   });
 
   it("unknown reason code is refused", async () => {

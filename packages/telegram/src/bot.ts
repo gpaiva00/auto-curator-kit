@@ -339,9 +339,10 @@ export class TelegramBot implements Notifier {
       case "a": {
         await this.ack(q.id, S.toastApproving);
         const outcomes = await actions.approve(id);
+        // approved posts leave the chat; only a failure (needs the user's attention) is kept as a message
         await this.deleteMessages(item.telegramMsgIds);
         const fresh = store.get(id) ?? item;
-        await this.reply(chat, outcomeText(fresh, outcomes, this.d.ui.timezone));
+        if (outcomes.some((o) => o.kind === "failed")) await this.reply(chat, outcomeText(fresh, outcomes, this.d.ui.timezone));
         const manual = outcomes.filter((o) => o.kind !== "buffer").map((o) => o.platform);
         if (manual.length) await this.sendManual(chat, fresh, manual);
         return;
@@ -360,7 +361,6 @@ export class TelegramBot implements Notifier {
         await this.ack(q.id, S.toastRejected);
         await actions.reject(id, reason.code);
         await this.deleteMessages(item.telegramMsgIds);
-        await this.reply(chat, S.rejected(label, reason.label));
         return;
       }
       case "eb":
