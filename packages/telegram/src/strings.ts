@@ -11,6 +11,7 @@ export const S = {
   thirdPartyMedia: (n: number) => `🖼 ${n} mídia(s) de terceiros: credite`,
   textOnly: "🔤 Só texto",
   noPreparedMedia: "🚫 Sem mídia preparada",
+  noMediaHost: (names: string) => `🚫 Sem host de mídia: ${names} sai sem imagem/vídeo. Configure IMGBB_API_KEY, R2_* ou plugins.mediaHost.`,
   source: (url: string) => `🔗 Fonte: ${url}`,
   credit: (c: string) => `✍️ Crédito: ${c}`,
   separator: "─────────",

@@ -53,7 +53,8 @@ export function approvalText(item: Item, ui: ApprovalUiConfig): string {
   const media = third > 0 ? S.thirdPartyMedia(third) : item.prepared.length === 0 ? (item.media.length === 0 ? S.textOnly : S.noPreparedMedia) : undefined;
   const credit = ui.credit === "show" ? d?.sourceCredit?.trim() : undefined;
   const source = [item.sourceUrl ? S.source(item.sourceUrl) : undefined, credit ? S.credit(credit) : undefined].filter(Boolean).join("  ·  ");
-  const info = [head, stats, doubt ? S.doubt(doubt) : undefined, media, source || undefined].filter(Boolean).join("\n");
+  const noHost = ui.noMediaHost?.length && item.media.length > 0 ? S.noMediaHost(ui.noMediaHost.map(platformName).join(", ")) : undefined;
+  const info = [head, stats, doubt ? S.doubt(doubt) : undefined, media, noHost, source || undefined].filter(Boolean).join("\n");
   const text = d ? composeText(d, { credit: ui.credit }) : trunc(item.text, 1000);
   return block(info, `${S.separator}\n${text}`, d?.firstComment ? S.firstComment(d.firstComment) : undefined);
 }

@@ -37,7 +37,7 @@ export const HAS_FFMPEG = await ffmpegAvailable();
 export function makeProfile(over: Record<string, unknown> = {}): ProfileConfig {
   return ProfileSchema.parse({
     id: "teste", name: "Perfil Teste", template: "news-card",
-    destinations: [{ platform: "instagram" }],
+    destinations: [{ platform: "instagram", publisher: "manual" }],
     media: { strategy: "render", template: "auto" },
     brand: { name: "Perfil Teste", handle: "@teste", colors: { primary: "#111111", accent: "#E5173F", background: "#FFFFFF", text: "#111111" } },
     ...over,

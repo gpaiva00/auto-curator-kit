@@ -244,4 +244,6 @@ export interface ApprovalUiConfig {
   destinations: Destination[];
   rejectReasons: RejectReason[];
   timezone: string;
+  /** Plataformas com mídia no perfil e sem host de mídia: o cartão avisa quando o item tem mídia. */
+  noMediaHost?: string[];
 }

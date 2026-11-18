@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Mensagem do campo publisher ausente: sugere os dois ids do kit. */
+export const PUBLISHER_REQUIRED = 'publicador obrigatório: use "manual", "buffer" ou um id de plugins.publishers';
+
 const TIPO: Record<string, string> = { string: "texto", number: "número", boolean: "verdadeiro/falso", array: "lista", object: "objeto", null: "nulo" };
 const tipo = (t: string): string => TIPO[t] ?? t;
 
@@ -7,7 +10,7 @@ const tipo = (t: string): string => TIPO[t] ?? t;
 export const ptErrorMap: z.ZodErrorMap = (issue, ctx) => {
   switch (issue.code) {
     case z.ZodIssueCode.invalid_type:
-      if (issue.received === "undefined") return { message: "campo obrigatório" };
+      if (issue.received === "undefined") return { message: issue.path.at(-1) === "publisher" ? PUBLISHER_REQUIRED : "campo obrigatório" };
       return { message: `esperado ${tipo(issue.expected)}, recebido ${tipo(issue.received)}` };
     case z.ZodIssueCode.unrecognized_keys:
       return { message: `chave desconhecida: ${issue.keys.map((k) => `"${k}"`).join(", ")}` };

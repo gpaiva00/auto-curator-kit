@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PUBLISHER_REQUIRED } from "./errors-pt.js";
 
 // ------------------------------------------------------------------ models.json (LLM routing + budget)
 
@@ -47,8 +48,8 @@ export type SourceConfig = z.infer<typeof SourceConfig>;
 export const Destination = z.object({
   /** "instagram" | "tiktok" | "linkedin" | "x" | "threads" ... (free string, shown capitalised in messages). */
   platform: z.string().min(1),
-  /** Id of a publisher: "manual" = the bot sends the final text and you post by hand; any other id must exist in plugins.publishers (or "buffer" with BUFFER_API_KEY). */
-  publisher: z.string().min(1).default("manual"),
+  /** Id obrigatório do publicador: "manual" (copiar e colar pelo Telegram), "buffer", ou um id de plugins.publishers. */
+  publisher: z.string({ required_error: PUBLISHER_REQUIRED, invalid_type_error: PUBLISHER_REQUIRED }).min(1, PUBLISHER_REQUIRED),
   /** Buffer only: draft = lands as a draft (safe default); queue = next free slot; now = immediately. */
   mode: z.enum(["draft", "queue", "now"]).default("draft"),
   /** Buffer only: env var holding the channel id. Default BUFFER_CHANNEL_<PLATFORM>. */

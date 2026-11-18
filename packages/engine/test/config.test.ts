@@ -15,7 +15,7 @@ describe("loadProfile", () => {
     writeFileSync(join(tdir, "models.json"), JSON.stringify({ monthlyBudgetBRL: 10, roles: { triage: role, curator: role } }));
     const pdir = join(root, "prof");
     mkdirSync(pdir);
-    writeFileSync(join(pdir, "profile.json"), JSON.stringify({ id: "p1", name: "P", template: "tt", destinations: [{ platform: "x" }], editorial: { credit: "show" } }));
+    writeFileSync(join(pdir, "profile.json"), JSON.stringify({ id: "p1", name: "P", template: "tt", destinations: [{ platform: "x", publisher: "manual" }], editorial: { credit: "show" } }));
     writeFileSync(join(pdir, "style-guide.md"), "guia");
     mkdirSync(join(pdir, "prompts"));
     for (const r of ["triage", "curator"]) writeFileSync(join(pdir, "prompts", `${r}.md`), "prompt");

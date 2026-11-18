@@ -183,7 +183,7 @@ describe("render preparer", () => {
     const f = path.join(dir, "local.mp4");
     await writeFile(f, "x");
     const item = makeItem({ media: [{ type: "video", localPath: f }] });
-    const tiktok = makeProfile({ destinations: [{ platform: "instagram" }, { platform: "tiktok" }] });
+    const tiktok = makeProfile({ destinations: [{ platform: "instagram", publisher: "manual" }, { platform: "tiktok", publisher: "manual" }] });
     await new RenderPreparer({ logger: silentLogger, renderer: ok(), ffmpegAvailable: async () => false }).prepare(item, makeDraft(), ctx(tiktok));
     expect(seen[0]!.template).toBe("card");
     await new RenderPreparer({ logger: silentLogger, renderer: ok(), ffmpegAvailable: async () => true }).prepare(item, makeDraft(), ctx(tiktok));

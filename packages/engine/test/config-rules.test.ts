@@ -20,7 +20,7 @@ function fixture(over: Record<string, unknown> = {}, opts: { models?: unknown; s
   const skip = new Set(opts.skip ?? []);
   if (!skip.has("style")) writeFileSync(join(pdir, "style-guide.md"), "guia");
   if (!skip.has("triage")) writeFileSync(join(pdir, "prompts", "triage.md"), "p");
-  writeFileSync(join(pdir, "profile.json"), JSON.stringify({ id: "p1", name: "P", template: "tt", destinations: [{ platform: "x" }], ...over }));
+  writeFileSync(join(pdir, "profile.json"), JSON.stringify({ id: "p1", name: "P", template: "tt", destinations: [{ platform: "x", publisher: "manual" }], ...over }));
   process.env.TEMPLATES_DIR = join(root, "templates");
   return pdir;
 }
