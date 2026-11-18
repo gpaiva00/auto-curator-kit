@@ -1,8 +1,11 @@
-import { mkdirSync, mkdtempSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { ConfigError, KIT_ROOT, insideNodeModules, loadProfile } from "../src/index.js";
+
+const tmpBases: string[] = [];
+afterAll(() => tmpBases.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
 describe("perfil e dados nunca dentro de node_modules", () => {
   it("detecta qualquer segmento node_modules, de qualquer pacote", () => {
@@ -12,6 +15,7 @@ describe("perfil e dados nunca dentro de node_modules", () => {
   });
   it("resolve symlink: caminho via link que aponta para node_modules é recusado", () => {
     const base = mkdtempSync(join(tmpdir(), "ac-guard-"));
+    tmpBases.push(base);
     mkdirSync(join(base, "real", "node_modules", "perfil-na-lib", "dados"), { recursive: true });
     symlinkSync(join(base, "real", "node_modules", "perfil-na-lib"), join(base, "link"));
     expect(insideNodeModules(join(base, "link", "dados"))).toBe(true);
