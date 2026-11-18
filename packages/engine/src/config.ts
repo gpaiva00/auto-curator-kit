@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { z } from "zod";
 import { KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
-import { isInstalledKit, kitRoot } from "@auto-curator/contracts/kit-root";
+import { kitRoot } from "@auto-curator/contracts/kit-root";
 
 export class ConfigError extends KitError {
   constructor(message: string) {
@@ -89,12 +89,9 @@ function realPath(p: string): string {
   return join(realpathSync(cur), ...tail);
 }
 
-/** Instalado como dependência e o alvo cai dentro da pasta do pacote: nada pode ser gravado ali. */
-export function insideInstalledKit(target: string, root: string = KIT_ROOT): boolean {
-  if (!isInstalledKit(root)) return false;
-  const t = realPath(target);
-  const r = realPath(root);
-  return t === r || t.startsWith(r + sep);
+/** O caminho real (symlinks resolvidos) passa por node_modules: pacote instalado, nunca perfil nem dados. */
+export function insideNodeModules(target: string): boolean {
+  return realPath(target).split(/[\\/]/).includes("node_modules");
 }
 
 export function templatesRoot(env: NodeJS.ProcessEnv = process.env): string {
@@ -123,8 +120,8 @@ export function loadProfile(profileDirArg?: string, env: NodeJS.ProcessEnv = pro
   const modelsFile = profile.models === "default" ? join(templateDir, "models.json") : isAbsolute(profile.models) ? profile.models : join(profileDir, profile.models);
   const models = parseWith(ModelsConfig, readJson(modelsFile, "models.json"), "models.json", modelsFile);
 
+  if (insideNodeModules(profileDir)) throw new ConfigError("O perfil está dentro de node_modules. Copie-o para uma pasta sua e aponte --profile para ela.");
   const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(profileDir, "data"));
-  if (insideInstalledKit(dataDir)) throw new ConfigError("Os dados ficariam dentro da instalação do kit (node_modules). Defina CURADOR_DATA_DIR com uma pasta fora dela.");
-  if (insideInstalledKit(profileDir)) throw new ConfigError("O perfil está dentro da instalação do kit (node_modules). Copie-o para uma pasta sua e aponte --profile para ela.");
+  if (insideNodeModules(dataDir)) throw new ConfigError("Os dados ficariam dentro de node_modules. Defina CURADOR_DATA_DIR com uma pasta fora dela.");
   return { profile, template, templateDir, models, profileDir, dataDir };
 }

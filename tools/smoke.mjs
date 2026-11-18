@@ -1,7 +1,7 @@
 // Smoke de consumidor (SPEC-KIT 1.2a e 1.2a-bis): npm pack -> npm install do .tgz -> import, bin, tsc, doctor, trava de escrita.
 // Roda com npm e Node (piso 22.13.0 e a versão atual), num diretório temporário. Uso: node tools/smoke.mjs [--keep]
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ROOT } from "./api-report.mjs";
@@ -164,8 +164,29 @@ function main() {
       const byId = doctorRun("current", consumer, "astronomia");
       must(byId.lines.some((l) => l.includes("PROFILES_DIR")), "busca por id não exigiu PROFILES_DIR");
       const inside = doctorRun("current", consumer, profile, join(consumer, "node_modules", "auto-curator-kit", "data"));
-      must(inside.code === 1 && inside.lines.some((l) => /dentro da instalação do kit.*CURADOR_DATA_DIR/.test(l)), "trava de escrita não recusou dados dentro de node_modules");
-      log(`travas (${variant}): perfil obrigatório, id sem PROFILES_DIR e dados dentro de node_modules recusados`);
+      must(inside.code === 1 && inside.lines.some((l) => /dentro de node_modules.*CURADOR_DATA_DIR/.test(l)), "trava não recusou dados dentro do próprio kit em node_modules");
+
+      // Perfil e dados em node_modules de OUTRO pacote, e os mesmos caminhos via symlink: tudo recusado, sem criar banco.
+      const lib = join(consumer, "node_modules", "perfil-na-lib");
+      mkdirSync(lib, { recursive: true });
+      writeFileSync(join(lib, "package.json"), JSON.stringify({ name: "perfil-na-lib", version: "1.0.0" }));
+      const libProfile = join(lib, "astronomia");
+      cpSync(join(ROOT, "profiles", "astronomia"), libProfile, { recursive: true, filter: (src) => !/(^|\/)\.env$/.test(src) });
+      const libData = join(lib, "dados");
+      const refusedProfile = (r) => r.code === 1 && r.lines.some((l) => /O perfil está dentro de node_modules/.test(l));
+      const refusedData = (r) => r.code === 1 && r.lines.some((l) => /Os dados ficariam dentro de node_modules/.test(l));
+
+      must(refusedProfile(doctorRun("current", consumer, libProfile)), "perfil em node_modules de outro pacote não foi recusado");
+      must(!existsSync(join(libProfile, "data")), "banco criado dentro do perfil em node_modules");
+      must(refusedData(doctorRun("current", consumer, profile, libData)), "dados em node_modules de outro pacote não foram recusados");
+      must(!existsSync(libData), "pasta de dados criada dentro de node_modules");
+
+      symlinkSync(libProfile, join(consumer, "link-perfil"));
+      must(refusedProfile(doctorRun("current", consumer, join(consumer, "link-perfil"))), "perfil via symlink para node_modules não foi recusado");
+      symlinkSync(lib, join(consumer, "link-lib"));
+      must(refusedData(doctorRun("current", consumer, profile, join(consumer, "link-lib", "dados"))), "dados via symlink para node_modules não foram recusados");
+      must(!existsSync(libData), "dados criados via symlink dentro de node_modules");
+      log(`travas (${variant}): perfil obrigatório, id sem PROFILES_DIR, dados e perfil em node_modules (kit e outro pacote), inclusive via symlink`);
 
       // Binário da CLI.
       const bin = node("current", [join("node_modules", "auto-curator-kit", "dist", "bin.js"), "--help"], { cwd: consumer });

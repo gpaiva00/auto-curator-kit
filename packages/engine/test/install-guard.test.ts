@@ -1,26 +1,24 @@
-import { mkdtempSync, mkdirSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ConfigError, KIT_ROOT, insideInstalledKit, loadProfile } from "../src/index.js";
+import { ConfigError, KIT_ROOT, insideNodeModules, loadProfile } from "../src/index.js";
 
-describe("instalação como dependência", () => {
-  const installed = "/app/node_modules/auto-curator-kit";
-  it("detecta alvo dentro da pasta do pacote instalado", () => {
-    expect(insideInstalledKit(join(installed, "profiles/x/data"), installed)).toBe(true);
-    expect(insideInstalledKit(installed, installed)).toBe(true);
-    expect(insideInstalledKit("/app/data", installed)).toBe(false);
+describe("perfil e dados nunca dentro de node_modules", () => {
+  it("detecta qualquer segmento node_modules, de qualquer pacote", () => {
+    expect(insideNodeModules("/app/node_modules/perfil-na-lib/dados")).toBe(true);
+    expect(insideNodeModules("/app/node_modules/auto-curator-kit/data")).toBe(true);
+    expect(insideNodeModules("/app/dados")).toBe(false);
   });
-  it("resolve symlink: caminho via link cai dentro da instalação real", () => {
+  it("resolve symlink: caminho via link que aponta para node_modules é recusado", () => {
     const base = mkdtempSync(join(tmpdir(), "ac-guard-"));
-    const real = join(base, "real", "node_modules", "auto-curator-kit");
-    mkdirSync(real, { recursive: true });
-    const link = join(base, "link");
-    symlinkSync(join(base, "real"), link);
-    expect(insideInstalledKit(join(link, "node_modules", "auto-curator-kit", "data"), real)).toBe(true);
+    mkdirSync(join(base, "real", "node_modules", "perfil-na-lib", "dados"), { recursive: true });
+    symlinkSync(join(base, "real", "node_modules", "perfil-na-lib"), join(base, "link"));
+    expect(insideNodeModules(join(base, "link", "dados"))).toBe(true);
+    expect(insideNodeModules(join(base, "link"))).toBe(true);
   });
-  it("no repo (fora de node_modules) nunca bloqueia", () => {
-    expect(insideInstalledKit(join(KIT_ROOT, "profiles/x/data"), KIT_ROOT)).toBe(false);
+  it("no repo, o padrão <perfil>/data não é recusado", () => {
+    expect(insideNodeModules(join(KIT_ROOT, "profiles/x/data"))).toBe(false);
   });
   it("sem perfil explícito, loadProfile recusa com instrução", () => {
     expect(() => loadProfile(undefined, {})).toThrow(ConfigError);
@@ -30,5 +28,9 @@ describe("instalação como dependência", () => {
     const dir = join(KIT_ROOT, "profiles", "astronomia");
     expect(loadProfile(dir, {}).dataDir).toBe(join(dir, "data"));
     expect(loadProfile(dir, { CURADOR_DATA_DIR: "/tmp/elsewhere" }).dataDir).toBe("/tmp/elsewhere");
+  });
+  it("loadProfile recusa dados dentro de node_modules antes de criar nada", () => {
+    const dir = join(KIT_ROOT, "profiles", "astronomia");
+    expect(() => loadProfile(dir, { CURADOR_DATA_DIR: join(KIT_ROOT, "node_modules", "x", "dados") })).toThrow(/node_modules/);
   });
 });
