@@ -214,34 +214,34 @@ export class App implements BotActions {
       const media = mediaForDestination(item, dest);
       if (!media) continue; // destination does not take this kind of media
       attempted++;
-      if (dest.publisher === "buffer" && this.store.publicationsToday(dest.platform) >= dest.dailyCap) {
+      if (dest.publisher !== "manual" && this.store.publicationsToday(dest.platform) >= dest.dailyCap) {
         const note = `limite diário de ${dest.dailyCap} atingido`;
         this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });
         outcomes.push({ platform: dest.platform, kind: "manual", error: note });
         continue;
       }
-      if (dest.publisher === "buffer") {
-        const pub = this.d.publishers.buffer;
+      if (dest.publisher !== "manual") {
+        const pub = this.d.publishers[dest.publisher];
         const now = this.clock.now();
         // No interval and no window: slot is `now`, so the post goes out as before.
         const slot = nextSlot(now, dest, this.store.lastSlotAt(dest.platform), this.bundle.profile.timezone);
         if (slot.getTime() > now.getTime()) {
           // Channel interval or window says "not yet": keep it locally until releaseDue() sends it.
-          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "queued", mode: dest.mode, scheduledAt: slot.toISOString() });
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: dest.publisher, status: "queued", mode: dest.mode, scheduledAt: slot.toISOString() });
           outcomes.push({ platform: dest.platform, kind: "queued", scheduledAt: slot.toISOString() });
           buffered++;
           continue;
         }
         try {
-          if (!pub) throw new KitError("publisher buffer não configurado", "NO_PUBLISHER");
+          if (!pub) throw new KitError(`publicador ${dest.publisher} não configurado`, "NO_PUBLISHER");
           const res = await pub.publish({ item, destination: dest, text, firstComment: item.draft.firstComment, media });
-          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "scheduled", externalId: res.externalId, mode: res.mode, scheduledAt: res.scheduledAt });
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: dest.publisher, status: "scheduled", externalId: res.externalId, mode: res.mode, scheduledAt: res.scheduledAt });
           outcomes.push({ platform: dest.platform, kind: "buffer", mode: res.mode, scheduledAt: res.scheduledAt, droppedMedia: res.droppedMedia });
           buffered++;
           continue;
         } catch (e) {
           this.log.warn(`buffer falhou (${dest.platform}): ${errMsg(e)}`);
-          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "failed", error: errMsg(e) });
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: dest.publisher, status: "failed", error: errMsg(e) });
           outcomes.push({ platform: dest.platform, kind: "failed", error: errMsg(e) });
           continue;
         }
@@ -270,10 +270,10 @@ export class App implements BotActions {
       for (const p of this.store.dueQueued(now)) {
         try {
           const item = this.store.get(p.itemId);
-          const dest = this.bundle.profile.destinations.find((d) => d.platform === p.platform && d.publisher === "buffer");
-          const pub = this.d.publishers.buffer;
+          const dest = this.bundle.profile.destinations.find((d) => d.platform === p.platform && d.publisher === p.publisher);
+          const pub = this.d.publishers[p.publisher];
           if (!item?.draft || !dest) throw new KitError("item ou destino não existe mais", "NOT_FOUND");
-          if (!pub) throw new KitError("publisher buffer não configurado", "NO_PUBLISHER");
+          if (!pub) throw new KitError(`publicador ${p.publisher} não configurado`, "NO_PUBLISHER");
           const media = mediaForDestination(item, dest) ?? [];
           const text = composeText(item.draft, { credit: this.bundle.profile.editorial.credit });
           const res = await pub.publish({ item, destination: dest, text, firstComment: item.draft.firstComment, media });
