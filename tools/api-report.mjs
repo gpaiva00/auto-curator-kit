@@ -21,6 +21,19 @@ export function loadCompilerOptions() {
   return { ...parsed.options, noEmit: true };
 }
 
+/** Nomes com valor em runtime (não tipos) de uma entrada, para o bootstrap reexportar. */
+export function valueExportNames(file) {
+  const program = ts.createProgram({ rootNames: [join(ROOT, "entries", `${file}.ts`)], options: loadCompilerOptions() });
+  const checker = program.getTypeChecker();
+  const sf = program.getSourceFile(join(ROOT, "entries", `${file}.ts`));
+  const sym = checker.getSymbolAtLocation(sf);
+  return checker
+    .getExportsOfModule(sym)
+    .filter((s) => ((s.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(s) : s).flags & ts.SymbolFlags.Value) !== 0)
+    .map((s) => s.getName())
+    .sort();
+}
+
 export function buildApiReport() {
   const files = ENTRIES.map((e) => join(ROOT, "entries", `${e.file}.ts`));
   const program = ts.createProgram({ rootNames: files, options: loadCompilerOptions() });

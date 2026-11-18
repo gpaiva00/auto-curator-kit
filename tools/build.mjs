@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import ts from "typescript";
-import { ENTRIES, REPORT_PATH, ROOT, buildApiReport, loadCompilerOptions } from "./api-report.mjs";
+import { ENTRIES, REPORT_PATH, ROOT, buildApiReport, loadCompilerOptions, valueExportNames } from "./api-report.mjs";
 
 const DIST = join(ROOT, "dist");
 const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
@@ -25,7 +25,8 @@ function walk(dir, out = []) {
 function bundleJs() {
   const args = [
     ...ENTRIES.map((e) => `entries/${e.file}.ts`),
-    "--root", "entries", "--outdir", "dist",
+    "entries/bin.ts",
+    "--root", "entries", "--outdir", "dist/impl",
     "--target", "node", "--format", "esm", "--splitting",
     ...externals.flatMap((e) => ["--external", e]),
   ];
@@ -40,6 +41,22 @@ function bundleJs() {
       if (!externals.includes(spec)) fail(`${relative(ROOT, file)} importa "${spec}", que não está em dependencies`);
     }
   }
+}
+
+/** Bootstrap por entrada: checa o runtime antes de carregar o impl (que abre node:sqlite no load). */
+function writeBootstraps() {
+  const head = `import { assertRuntime } from "./runtime.js";\nassertRuntime();\n`;
+  for (const e of ENTRIES) {
+    const names = valueExportNames(e.file);
+    const body = names.length ? `const m = await import("./impl/${e.file}.js");\nexport const { ${names.join(", ")} } = m;\n` : `await import("./impl/${e.file}.js");\n`;
+    writeFileSync(join(DIST, `${e.file}.js`), head + body);
+  }
+  writeFileSync(join(DIST, "bin.js"), head + `await import("./impl/bin.js");\n`);
+}
+
+function bundleRuntime() {
+  const r = spawnSync("bun", ["build", "entries/runtime-check.ts", "--outfile", "dist/runtime.js", "--target", "node", "--format", "esm"], { cwd: ROOT, stdio: "inherit" });
+  if (r.status !== 0) fail("bun build do runtime-check falhou");
 }
 
 function emitDeclarations() {
@@ -83,6 +100,8 @@ function rewriteDeclarations() {
 rmSync(DIST, { recursive: true, force: true });
 mkdirSync(DIST, { recursive: true });
 bundleJs();
+bundleRuntime();
+writeBootstraps();
 emitDeclarations();
 rewriteDeclarations();
 mkdirSync(dirname(REPORT_PATH), { recursive: true });

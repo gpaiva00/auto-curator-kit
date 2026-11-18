@@ -12,7 +12,7 @@ import { consoleIo, type CmdCtx } from "./io.js";
 
 export const HELP = `auto-curator: motor para perfis curados por IA com aprovação no Telegram
 
-Uso: tsx packages/cli/src/main.ts <comando> [--profile <id ou pasta>] [opções]
+Uso: auto-curator <comando> [--profile <id ou pasta>] [opções]
      (ou: bun run <comando> -- --profile <id>)
 
 Comandos
