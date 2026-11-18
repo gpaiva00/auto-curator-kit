@@ -16,6 +16,9 @@ describe("loadProfile", () => {
     const pdir = join(root, "prof");
     mkdirSync(pdir);
     writeFileSync(join(pdir, "profile.json"), JSON.stringify({ id: "p1", name: "P", template: "tt", destinations: [{ platform: "x" }], editorial: { credit: "show" } }));
+    writeFileSync(join(pdir, "style-guide.md"), "guia");
+    mkdirSync(join(pdir, "prompts"));
+    for (const r of ["triage", "curator"]) writeFileSync(join(pdir, "prompts", `${r}.md`), "prompt");
     writeFileSync(join(pdir, ".env"), "A=1\n# c\nexport B='two'\nKEEP=new\n");
     const env: NodeJS.ProcessEnv = { TEMPLATES_DIR: join(root, "templates"), CURADOR_DATA_DIR: join(root, "data"), KEEP: "old" };
     const b = loadProfile(pdir, env);

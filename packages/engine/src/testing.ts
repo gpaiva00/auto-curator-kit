@@ -163,5 +163,6 @@ export function makeBundle(dataDir: string, profile: Partial<ProfileConfigInput>
     models: ModelsConfig.parse({ monthlyBudgetBRL: 50, roles: { triage: ROLE, curator: ROLE } }),
     profileDir: join(dataDir, "profile"),
     dataDir,
+    warnings: [],
   };
 }

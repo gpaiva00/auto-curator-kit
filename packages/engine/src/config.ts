@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { z } from "zod";
-import { KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
+import { KIT_PROFILE_VERSION, KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
+import { formatIssuePath, ptErrorMap } from "@auto-curator/contracts/errors-pt";
 import { kitRoot } from "@auto-curator/contracts/kit-root";
 
 export class ConfigError extends KitError {
@@ -21,7 +22,11 @@ export interface ProfileBundle {
   models: ModelsConfig;
   profileDir: string;
   dataDir: string;
+  /** Avisos que não impedem a carga (ex.: kitProfileVersion antiga). */
+  warnings: string[];
 }
+
+export const MIGRATION_URL = "https://github.com/gpaiva00/auto-curator-kit/blob/main/CHANGELOG.md";
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 
@@ -63,9 +68,12 @@ function readJson(file: string, what: string): unknown {
 }
 
 function parseWith<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, data: unknown, what: string, file: string): T {
-  const r = schema.safeParse(data);
+  const r = schema.safeParse(data, { errorMap: ptErrorMap });
   if (r.success) return r.data;
-  const issues = r.error.issues.map((i) => `  - ${i.path.join(".") || "(raiz)"}: ${i.message}`).join("\n");
+  // chave desconhecida vira uma linha por chave, com o nome no caminho (sources[2].tipe)
+  const issues = r.error.issues
+    .flatMap((i) => (i.code === "unrecognized_keys" ? i.keys.map((k) => `  - ${formatIssuePath([...i.path, k])}: chave desconhecida`) : [`  - ${formatIssuePath(i.path) || "(raiz)"}: ${i.message}`]))
+    .join("\n");
   throw new ConfigError(`${what} inválido (${file}):\n${issues}`);
 }
 
@@ -117,11 +125,24 @@ export function loadProfile(profileDirArg?: string, env: NodeJS.ProcessEnv = pro
   const merged = deepMerge(template.defaults, rawProfile);
   const profile = parseWith(ProfileConfig, merged, "profile.json", profileFile);
 
+  const warnings: string[] = [];
+  const version = profile.kitProfileVersion ?? KIT_PROFILE_VERSION;
+  if (version > KIT_PROFILE_VERSION) throw new ConfigError(`profile.json: kitProfileVersion ${version} é maior que a suportada pelo kit (${KIT_PROFILE_VERSION}). Atualize o auto-curator-kit.`);
+  if (version < KIT_PROFILE_VERSION) warnings.push(`profile.json: kitProfileVersion ${version} é antiga (atual: ${KIT_PROFILE_VERSION}). Veja como migrar em ${MIGRATION_URL}`);
+
+  const styleFile = join(profileDir, "style-guide.md");
+  if (!existsSync(styleFile)) throw new ConfigError(`style-guide.md ausente em ${profileDir} (voz, público e assuntos do perfil).`);
+  for (const role of ["triage", "curator"] as const) {
+    const own = join(profileDir, "prompts", `${role}.md`);
+    const shared = join(templatesRoot(env), templateName, "prompts", `${role}.md`);
+    if (!existsSync(own) && !existsSync(shared)) throw new ConfigError(`prompts/${role}.md ausente: crie no perfil (${own}) ou use um template que o tenha.`);
+  }
+
   const modelsFile = profile.models === "default" ? join(templateDir, "models.json") : isAbsolute(profile.models) ? profile.models : join(profileDir, profile.models);
   const models = parseWith(ModelsConfig, readJson(modelsFile, "models.json"), "models.json", modelsFile);
 
   if (insideNodeModules(profileDir)) throw new ConfigError("O perfil está dentro de node_modules. Copie-o para uma pasta sua e aponte --profile para ela.");
   const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(profileDir, "data"));
   if (insideNodeModules(dataDir)) throw new ConfigError("Os dados ficariam dentro de node_modules. Defina CURADOR_DATA_DIR com uma pasta fora dela.");
-  return { profile, template, templateDir, models, profileDir, dataDir };
+  return { profile, template, templateDir, models, profileDir, dataDir, warnings };
 }

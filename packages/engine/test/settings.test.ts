@@ -9,6 +9,7 @@ const example = resolve(__dirname, "../../../profiles/linkedin-exemplo");
 function tmpProfile(): string {
   const dir = mkdtempSync(join(tmpdir(), "settings-"));
   copyFileSync(join(example, "profile.json"), join(dir, "profile.json"));
+  copyFileSync(join(example, "style-guide.md"), join(dir, "style-guide.md"));
   return dir;
 }
 

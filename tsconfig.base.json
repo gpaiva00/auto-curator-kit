@@ -42,6 +42,9 @@
       ],
       "@auto-curator/contracts/runtime": [
         "./packages/contracts/src/runtime.ts"
+      ],
+      "@auto-curator/contracts/errors-pt": [
+        "./packages/contracts/src/errors-pt.ts"
       ]
     }
   }
