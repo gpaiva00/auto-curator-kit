@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { isAbsolute, join, resolve } from "node:path";
 import { z } from "zod";
 import { KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
+import { kitRoot } from "@auto-curator/contracts/kit-root";
 
 export class ConfigError extends KitError {
   constructor(message: string) {
@@ -11,8 +11,8 @@ export class ConfigError extends KitError {
   }
 }
 
-/** packages/engine/src -> repo root. */
-export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+/** Raiz do kit: repo no desenvolvimento, pacote instalado em node_modules no consumidor. */
+export const KIT_ROOT = kitRoot();
 
 export interface ProfileBundle {
   profile: ProfileConfig;
@@ -77,7 +77,7 @@ export function resolveProfileDir(arg: string | undefined, env: NodeJS.ProcessEn
 }
 
 export function templatesRoot(env: NodeJS.ProcessEnv = process.env): string {
-  return env.TEMPLATES_DIR ? resolve(env.TEMPLATES_DIR) : join(REPO_ROOT, "templates");
+  return env.TEMPLATES_DIR ? resolve(env.TEMPLATES_DIR) : join(KIT_ROOT, "templates");
 }
 
 /** Loads a profile: its .env, profile.json merged over template defaults, the template and models.json. */
@@ -102,6 +102,6 @@ export function loadProfile(profileDirArg?: string, env: NodeJS.ProcessEnv = pro
   const modelsFile = profile.models === "default" ? join(templateDir, "models.json") : isAbsolute(profile.models) ? profile.models : join(profileDir, profile.models);
   const models = parseWith(ModelsConfig, readJson(modelsFile, "models.json"), "models.json", modelsFile);
 
-  const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(REPO_ROOT, "data", profile.id));
+  const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(KIT_ROOT, "data", profile.id));
   return { profile, template, templateDir, models, profileDir, dataDir };
 }

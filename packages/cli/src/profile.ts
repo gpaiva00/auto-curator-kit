@@ -1,8 +1,8 @@
 import { existsSync, readdirSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { ConfigError, REPO_ROOT } from "@auto-curator/engine";
+import { ConfigError, KIT_ROOT } from "@auto-curator/engine";
 
-export const defaultProfilesRoot = (env: NodeJS.ProcessEnv = process.env): string => (env.PROFILES_DIR ? resolve(env.PROFILES_DIR) : join(REPO_ROOT, "profiles"));
+export const defaultProfilesRoot = (env: NodeJS.ProcessEnv = process.env): string => (env.PROFILES_DIR ? resolve(env.PROFILES_DIR) : join(KIT_ROOT, "profiles"));
 
 /** Ids (folders with a profile.json) under a profiles root. */
 export function listProfileIds(root: string): string[] {
@@ -27,7 +27,7 @@ export function resolveProfile(arg: string | undefined, env: NodeJS.ProcessEnv =
   };
   if (!value) throw new ConfigError(`Perfil não informado: use --profile <id ou diretório> ou defina CURADOR_PROFILE.${available()}`);
 
-  const candidates = looksLikePath(value) ? [resolve(value), resolve(REPO_ROOT, value)] : [join(profilesRoot, value), resolve(value)];
+  const candidates = looksLikePath(value) ? [resolve(value), resolve(KIT_ROOT, value)] : [join(profilesRoot, value), resolve(value)];
   for (const c of candidates) if (existsSync(join(c, "profile.json"))) return c;
   throw new ConfigError(`Perfil "${value}" não encontrado (procurei ${candidates.join(" e ")}).${available()}`);
 }

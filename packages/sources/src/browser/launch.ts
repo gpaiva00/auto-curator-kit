@@ -1,8 +1,9 @@
 import { execFile } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+import { kitRoot } from "@auto-curator/contracts/kit-root";
 
-/** The repo's scripts/chrome-reader.sh (this file lives in packages/sources/src/browser). */
-export const DEFAULT_READER_SCRIPT = fileURLToPath(new URL("../../../../scripts/chrome-reader.sh", import.meta.url));
+/** The kit's scripts/chrome-reader.sh. */
+export const DEFAULT_READER_SCRIPT = join(kitRoot(), "scripts", "chrome-reader.sh");
 
 export interface LaunchOptions {
   cdpUrl: string;

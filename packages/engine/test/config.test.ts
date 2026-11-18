@@ -47,8 +47,8 @@ describe("loadProfile", () => {
 describe("real templates and profiles", () => {
   it("loads every example profile and assembles both prompts", async () => {
     const { readdirSync, existsSync } = await import("node:fs");
-    const { REPO_ROOT, FilePromptProvider } = await import("../src/index.js");
-    const root = join(REPO_ROOT, "profiles");
+    const { KIT_ROOT, FilePromptProvider } = await import("../src/index.js");
+    const root = join(KIT_ROOT, "profiles");
     if (!existsSync(root)) return;
     for (const name of readdirSync(root)) {
       if (!existsSync(join(root, name, "profile.json"))) continue;
