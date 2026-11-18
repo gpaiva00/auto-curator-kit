@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, join, resolve, sep } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { z } from "zod";
 import { KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
 import { isInstalledKit, kitRoot } from "@auto-curator/contracts/kit-root";
@@ -76,11 +76,24 @@ export function resolveProfileDir(arg: string | undefined, env: NodeJS.ProcessEn
   return resolve(dir);
 }
 
+/** Caminho com symlinks resolvidos; se o fim ainda não existe, resolve a parte que existe. */
+function realPath(p: string): string {
+  let cur = resolve(p);
+  const tail: string[] = [];
+  while (!existsSync(cur)) {
+    const parent = dirname(cur);
+    if (parent === cur) break;
+    tail.unshift(basename(cur));
+    cur = parent;
+  }
+  return join(realpathSync(cur), ...tail);
+}
+
 /** Instalado como dependência e o alvo cai dentro da pasta do pacote: nada pode ser gravado ali. */
 export function insideInstalledKit(target: string, root: string = KIT_ROOT): boolean {
   if (!isInstalledKit(root)) return false;
-  const t = resolve(target);
-  const r = resolve(root);
+  const t = realPath(target);
+  const r = realPath(root);
   return t === r || t.startsWith(r + sep);
 }
 

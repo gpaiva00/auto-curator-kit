@@ -1,3 +1,5 @@
+import { mkdtempSync, mkdirSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ConfigError, KIT_ROOT, insideInstalledKit, loadProfile } from "../src/index.js";
@@ -8,6 +10,14 @@ describe("instalação como dependência", () => {
     expect(insideInstalledKit(join(installed, "profiles/x/data"), installed)).toBe(true);
     expect(insideInstalledKit(installed, installed)).toBe(true);
     expect(insideInstalledKit("/app/data", installed)).toBe(false);
+  });
+  it("resolve symlink: caminho via link cai dentro da instalação real", () => {
+    const base = mkdtempSync(join(tmpdir(), "ac-guard-"));
+    const real = join(base, "real", "node_modules", "auto-curator-kit");
+    mkdirSync(real, { recursive: true });
+    const link = join(base, "link");
+    symlinkSync(join(base, "real"), link);
+    expect(insideInstalledKit(join(link, "node_modules", "auto-curator-kit", "data"), real)).toBe(true);
   });
   it("no repo (fora de node_modules) nunca bloqueia", () => {
     expect(insideInstalledKit(join(KIT_ROOT, "profiles/x/data"), KIT_ROOT)).toBe(false);
