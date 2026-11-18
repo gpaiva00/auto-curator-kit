@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { KitError } from "@auto-curator/contracts";
-import { FakeLlm, FakeSource, LlmOutputError, Scheduler, okDraft } from "../src/index.js";
+import { LlmOutputError, Scheduler } from "../src/index.js";
+import { FakeLlm, FakeSource, okDraft } from "../src/testing.js";
 import { setup } from "./helpers.js";
 
 const dests = [

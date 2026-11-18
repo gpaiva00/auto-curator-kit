@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Draft, type DraftInput } from "@auto-curator/contracts";
-import { okDraft } from "@auto-curator/engine";
+import { okDraft } from "@auto-curator/engine/testing";
 import { EvalCase, EvalFile, checkCase } from "../src/evalMatch.js";
 import { itemFromEval } from "../src/commands/eval.js";
 

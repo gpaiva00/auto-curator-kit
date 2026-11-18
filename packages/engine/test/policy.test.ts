@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Draft, type Item } from "@auto-curator/contracts";
-import { Store, enforceEditorial, makeBundle, matchBlocked, okDraft, parseVeto, queueGate } from "../src/index.js";
+import { Store, enforceEditorial, matchBlocked, parseVeto, queueGate } from "../src/index.js";
+import { makeBundle, okDraft } from "../src/testing.js";
 import { tmp } from "./helpers.js";
 
 const item = { id: "i", author: "ana", source: "S", title: null, text: "texto original" } as unknown as Item;

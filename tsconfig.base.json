@@ -9,6 +9,37 @@
     "resolveJsonModule": true,
     "noEmit": true,
     "allowImportingTsExtensions": false,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "@auto-curator/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@auto-curator/contracts/kit-root": [
+        "./packages/contracts/src/kit-root.ts"
+      ],
+      "@auto-curator/engine": [
+        "./packages/engine/src/index.ts"
+      ],
+      "@auto-curator/engine/testing": [
+        "./packages/engine/src/testing.ts"
+      ],
+      "@auto-curator/telegram": [
+        "./packages/telegram/src/index.ts"
+      ],
+      "@auto-curator/sources": [
+        "./packages/sources/src/index.ts"
+      ],
+      "@auto-curator/media": [
+        "./packages/media/src/index.ts"
+      ],
+      "@auto-curator/publishers": [
+        "./packages/publishers/src/index.ts"
+      ],
+      "@auto-curator/cli": [
+        "./packages/cli/src/index.ts"
+      ]
+    }
   }
 }

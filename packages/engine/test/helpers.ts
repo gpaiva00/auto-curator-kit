@@ -2,7 +2,8 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProfileConfigInput } from "@auto-curator/contracts";
-import { App, FakeLlm, FakePreparer, FakePublisher, RecordingNotifier, Store, StaticPromptProvider, fixedClock, makeBundle, okDraft, type FakeSource } from "../src/index.js";
+import { App, Store, StaticPromptProvider } from "../src/index.js";
+import { FakeLlm, FakePreparer, FakePublisher, RecordingNotifier, fixedClock, makeBundle, okDraft, type FakeSource } from "../src/testing.js";
 
 export const tmp = (): string => mkdtempSync(join(tmpdir(), "engine-"));
 

@@ -1,7 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { FilePromptProvider, makeBundle, PromptMissingError } from "../src/index.js";
+import { FilePromptProvider, PromptMissingError } from "../src/index.js";
+import { makeBundle } from "../src/testing.js";
 import { tmp } from "./helpers.js";
 
 function dirs() {

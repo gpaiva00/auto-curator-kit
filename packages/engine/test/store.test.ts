@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { KitError } from "@auto-curator/contracts";
-import { Store, fixedClock, okDraft } from "../src/index.js";
+import { Store } from "../src/index.js";
+import { fixedClock, okDraft } from "../src/testing.js";
 import { Draft } from "@auto-curator/contracts";
 
 const raw = (k: string, extra = {}) => ({ dedupeKey: k, origin: "feed" as const, source: "s", author: "ana", text: "hello", ...extra });
