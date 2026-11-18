@@ -4,6 +4,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 
 ## [0.2.0] - 2026-11-18
 
+Asset `auto-curator-kit-0.2.0.tgz` · SHA-256 `634249d7f5cdc91ef50f52fcdf1630f18a8c7380f07ab3ae360b99f0c6ff2b4e`
+
 ### Quebra
 
 - **`run` recebe opções, não posição.** Antes: `run(argv, env, io, profilesRoot)`. Agora: `run(argv, { env, io, profilesRoot, plugins })`.
