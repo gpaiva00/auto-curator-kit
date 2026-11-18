@@ -22,6 +22,15 @@ export type SourceTypeInfo = { type: string; description: string };
 
 type Factory = (cfg: SourceConfig, deps: SourceDeps) => Source;
 
+/** A plugin source: the factory, or `{ factory, override }` to replace a type that already exists. */
+export type SourcePlugin = SourceFactory | { factory: SourceFactory; override?: boolean; description?: string };
+
+export interface SourceEntry {
+  factory: Factory;
+  description: string;
+  origin: "kit" | "registro" | "projeto";
+}
+
 const builtin: Record<BuiltinSourceType, Factory> = {
   rss: createRssSource,
   "google-news": createGoogleNewsSource,
@@ -31,35 +40,55 @@ const builtin: Record<BuiltinSourceType, Factory> = {
   "instagram-profile": createInstagramProfileSource,
 };
 
-const plugins = new Map<string, { factory: Factory; description: string }>();
+/** Types added with the deprecated registerSource (global, kept for compatibility). */
+const registered = new Map<string, { factory: Factory; description: string }>();
 
-/** Registers a third-party source type. Throws if the type already exists, unless `override` is set. */
+const TYPE_RE = /^[a-z][a-z0-9-]{0,40}$/;
+
+/** @deprecated Passe `plugins.sources` a run/buildRuntime. Mantido por compatibilidade; sem registro global obrigatório. */
 export function registerSource(type: string, factory: SourceFactory, opts: { description?: string; override?: boolean } = {}): void {
-  if (!/^[a-z][a-z0-9-]{0,40}$/.test(type)) throw new KitError(`Tipo de fonte inválido: "${type}" (use letras minúsculas, números e hífen).`, "SOURCE_REGISTER");
-  if ((type in builtin || plugins.has(type)) && !opts.override) throw new KitError(`Já existe uma fonte do tipo "${type}".`, "SOURCE_REGISTER");
-  plugins.set(type, { factory: factory as Factory, description: opts.description ?? "Fonte de plugin." });
+  if (!TYPE_RE.test(type)) throw new KitError(`Tipo de fonte inválido: "${type}" (use letras minúsculas, números e hífen).`, "SOURCE_REGISTER");
+  if ((type in builtin || registered.has(type)) && !opts.override) throw new KitError(`Já existe uma fonte do tipo "${type}".`, "SOURCE_REGISTER");
+  registered.set(type, { factory: factory as Factory, description: opts.description ?? "Fonte de plugin." });
 }
 
 /** Removes a plugin registered with registerSource (mainly for tests). */
 export function unregisterSource(type: string): void {
-  plugins.delete(type);
+  registered.delete(type);
+}
+
+/**
+ * Tabela de tipos: kit, depois registerSource, depois `plugins` do projeto.
+ * Um tipo do projeto que já existe é erro, a menos que venha com override: true.
+ */
+export function sourceTable(plugins: Record<string, SourcePlugin> = {}): Map<string, SourceEntry> {
+  const table = new Map<string, SourceEntry>();
+  for (const s of SOURCE_TYPES) table.set(s.type, { factory: builtin[s.type], description: s.description, origin: "kit" });
+  for (const [type, r] of registered) table.set(type, { ...r, origin: "registro" });
+  for (const [type, raw] of Object.entries(plugins)) {
+    if (!TYPE_RE.test(type)) throw new KitError(`Tipo de fonte inválido: "${type}" (use letras minúsculas, números e hífen).`, "SOURCE_REGISTER");
+    const p = typeof raw === "function" ? { factory: raw } : raw;
+    const existing = table.get(type);
+    if (existing && !p.override) throw new KitError(`Já existe a fonte "${type}" (${existing.origin}). Use override: true para substituí-la.`, "SOURCE_REGISTER");
+    table.set(type, { factory: p.factory as Factory, description: p.description ?? "Fonte do projeto.", origin: "projeto" });
+  }
+  return table;
 }
 
 /** Built-ins plus registered plugins. */
-export function listSourceTypes(): SourceTypeInfo[] {
-  return [...SOURCE_TYPES.map((s) => ({ type: s.type as string, description: s.description as string })), ...[...plugins].map(([type, p]) => ({ type, description: p.description }))];
+export function listSourceTypes(table: Map<string, SourceEntry> = sourceTable()): SourceTypeInfo[] {
+  return [...table].map(([type, e]) => ({ type, description: e.description }));
 }
 
-export function createSource(cfg: SourceConfig, deps: SourceDeps): Source {
-  const entry = plugins.get(cfg.type);
-  const factory: Factory | undefined = entry?.factory ?? (Object.hasOwn(builtin, cfg.type) ? builtin[cfg.type as BuiltinSourceType] : undefined);
-  if (!factory) {
-    throw new KitError(`Tipo de fonte desconhecido: "${cfg.type}". Tipos disponíveis: ${listSourceTypes().map((s) => s.type).join(", ")}.`, "SOURCE_UNKNOWN_TYPE");
+export function createSource(cfg: SourceConfig, deps: SourceDeps, table: Map<string, SourceEntry> = sourceTable()): Source {
+  const entry = table.get(cfg.type);
+  if (!entry) {
+    throw new KitError(`Tipo de fonte desconhecido: "${cfg.type}". Tipos disponíveis: ${[...table.keys()].join(", ")}.`, "SOURCE_UNKNOWN_TYPE");
   }
-  return factory(cfg, deps);
+  return entry.factory(cfg, deps);
 }
 
 /** Builds every enabled source of a profile (entries with `enabled: false` are skipped). */
-export function createSources(cfgs: readonly SourceConfig[], deps: SourceDeps): Source[] {
-  return cfgs.filter((c) => c.enabled !== false).map((c) => createSource(c, deps));
+export function createSources(cfgs: readonly SourceConfig[], deps: SourceDeps, table: Map<string, SourceEntry> = sourceTable()): Source[] {
+  return cfgs.filter((c) => c.enabled !== false).map((c) => createSource(c, deps, table));
 }
