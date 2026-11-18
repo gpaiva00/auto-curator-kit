@@ -36,6 +36,7 @@ export interface ParsedArgs {
   template?: string;
   name?: string;
   case?: string;
+  port?: string;
   offline: boolean;
   dry: boolean;
   help: boolean;
