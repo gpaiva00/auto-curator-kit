@@ -65,22 +65,24 @@ const TSCONFIG = JSON.stringify({
   files: ["check.ts"],
 });
 
-// argv: <argumento do --profile ou "-"> <pasta de dados ou "-">. Imprime todas as linhas e o código.
+// argv: <argumento do --profile ou "-"> <pasta de dados ou "-"> <"plugin" ou "-">. Imprime todas as linhas e o código.
+// "plugin" liga um plugin de fonte definido no consumidor (tipo minha-fonte), como um projeto faria.
 const DOCTOR = `import { run } from "auto-curator-kit";
-const [profileArg, dataArg] = process.argv.slice(2);
+const [profileArg, dataArg, pluginArg] = process.argv.slice(2);
 const env = dataArg && dataArg !== "-" ? { CURADOR_DATA_DIR: dataArg } : {};
 const lines = [];
 const io = { out: (l = "") => lines.push(l), err: (l = "") => lines.push(l) };
 const argv = profileArg === "-" ? ["doctor"] : ["doctor", "--profile", profileArg];
-const code = await run(argv, env, io);
+const plugins = pluginArg === "plugin" ? { sources: { "minha-fonte": (cfg) => ({ type: "minha-fonte", name: cfg.name ?? "minha-fonte", fetch: async () => [] }) } } : undefined;
+const code = await run(argv, { env, io, plugins });
 console.log(JSON.stringify({ code, lines }));
 `;
 
 // Só falhas de variável de ambiente são esperadas: o smoke roda com env vazio e sem .env.
 const ENV_ONLY = /(API_KEY|TELEGRAM_|BUFFER_API|IMGBB|R2_|Hospedagem de mídia|problema\(s\))/;
 
-function doctorRun(version, dir, profileArg, dataArg = "-") {
-  const r = node(version, ["doctor.mjs", profileArg, dataArg], { cwd: dir });
+function doctorRun(version, dir, profileArg, dataArg = "-", pluginArg = "-") {
+  const r = node(version, ["doctor.mjs", profileArg, dataArg, pluginArg], { cwd: dir });
   const json = r.out.trim().split("\n").filter((l) => l.startsWith("{")).pop();
   must(json, `doctor não produziu saída (${version}): ${r.out}`);
   return JSON.parse(json);
@@ -157,6 +159,19 @@ function main() {
       must(existsSync(join(profile, "data")), "dados não foram para <perfil>/data");
       must(!existsSync(join(consumer, "node_modules", "auto-curator-kit", "data")), "dados foram gravados dentro de node_modules");
       log(`doctor com perfil copiado (${variant}): code ${ok.code}, ${envFailures} falhas só de env, dados em <perfil>/data`);
+
+      // Plugin de fonte definido no consumidor (seção 3): sem ele o tipo é acusado; com ele, o doctor reconhece a fonte.
+      const pluginProfile = join(consumer, "perfil-plugin");
+      cpSync(profile, pluginProfile, { recursive: true });
+      const pjPath = join(pluginProfile, "profile.json");
+      const pj = JSON.parse(readFileSync(pjPath, "utf8"));
+      pj.sources = [{ type: "minha-fonte", name: "projeto" }];
+      writeFileSync(pjPath, JSON.stringify(pj));
+      const semPlugin = doctorRun("current", consumer, pluginProfile);
+      must(semPlugin.lines.some((l) => /minha-fonte.*desconhecido/.test(l)), "tipo de plugin não foi acusado sem o plugin");
+      const comPlugin = doctorRun("current", consumer, pluginProfile, "-", "plugin");
+      must(comPlugin.lines.some((l) => l.includes("✅ Fonte minha-fonte")), "plugin de fonte do consumidor não foi reconhecido");
+      log(`plugin de fonte no consumidor (${variant}): acusado sem plugin, reconhecido com plugin`);
 
       // Travas: perfil obrigatório, id sem PROFILES_DIR, dados dentro do pacote.
       const noProfile = doctorRun("current", consumer, "-");
