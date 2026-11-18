@@ -26,3 +26,8 @@ export function kitRoot(): string {
 export function kitVersion(): string {
   return (JSON.parse(readFileSync(join(kitRoot(), "package.json"), "utf8")) as { version: string }).version;
 }
+
+/** True quando o kit está instalado como dependência (a raiz fica dentro de node_modules). */
+export function isInstalledKit(root: string = kitRoot()): boolean {
+  return resolve(root).split(/[\\/]/).includes("node_modules");
+}

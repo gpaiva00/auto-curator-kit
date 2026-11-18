@@ -39,6 +39,9 @@
       ],
       "@auto-curator/cli": [
         "./packages/cli/src/index.ts"
+      ],
+      "@auto-curator/contracts/runtime": [
+        "./packages/contracts/src/runtime.ts"
       ]
     }
   }
