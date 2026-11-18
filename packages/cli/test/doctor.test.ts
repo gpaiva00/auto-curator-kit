@@ -8,7 +8,7 @@ import { cleanEnv, REPO_PROFILES, tmpDir } from "./helpers.js";
 describe("doctor --offline", () => {
   it("reports ❌ for missing keys on astronomia, exits 1, does not crash", async () => {
     const io = bufferIo();
-    const code = await run(["doctor", "--offline", "--profile", "astronomia"], cleanEnv(tmpDir()), io, REPO_PROFILES);
+    const code = await run(["doctor", "--offline", "--profile", "astronomia"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: REPO_PROFILES });
     const t = io.text();
     expect(code).toBe(1);
     expect(t).toContain("✅ profile.json válido");
@@ -24,7 +24,7 @@ describe("doctor --offline", () => {
   it("turns the key checks green when keys, token and chat are set (still no network)", async () => {
     const io = bufferIo();
     const env = cleanEnv(tmpDir(), { GROQ_API_KEY: "k", TELEGRAM_BOT_TOKEN: "t", TELEGRAM_ALLOWED_CHAT_ID: "42", BUFFER_API_KEY: "b", BUFFER_CHANNEL_INSTAGRAM: "c", IMGBB_API_KEY: "i" });
-    const code = await run(["doctor", "--offline", "--profile", "astronomia"], env, io, REPO_PROFILES);
+    const code = await run(["doctor", "--offline", "--profile", "astronomia"], { env: env, io: io, profilesRoot: REPO_PROFILES });
     const t = io.text();
     expect(t).toContain('✅ Chave de API para "curator": GROQ_API_KEY');
     expect(t).toContain("✅ Telegram: token definido");
@@ -41,13 +41,13 @@ describe("doctor --offline", () => {
     mkdirSync(dir);
     writeFileSync(join(dir, "profile.json"), JSON.stringify({ id: "quebrado" }));
     const io = bufferIo();
-    expect(await run(["doctor", "--offline", "--profile", "quebrado"], cleanEnv(tmpDir()), io, root)).toBe(1);
+    expect(await run(["doctor", "--offline", "--profile", "quebrado"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: root })).toBe(1);
     expect(io.text()).toMatch(/❌ profile\.json válido/);
   });
 
   it("fails cleanly when no profile is given", async () => {
     const io = bufferIo();
-    expect(await run(["doctor", "--offline"], cleanEnv(tmpDir()), io, REPO_PROFILES)).toBe(1);
+    expect(await run(["doctor", "--offline"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: REPO_PROFILES })).toBe(1);
     expect(io.text()).toContain("Perfil não informado");
   });
 });

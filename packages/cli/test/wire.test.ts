@@ -24,12 +24,12 @@ describe("parseUserIds", () => {
 });
 
 describe("buildRuntime", () => {
-  it("wires astronomia without Telegram (manual source last, buffer only with a key)", () => {
-    const rt = buildRuntime(join(REPO_PROFILES, "astronomia"), cleanEnv(tmpDir()), { logger: silentLogger });
+  it("wires astronomia without Telegram (manual source last)", () => {
+    const env = cleanEnv(tmpDir(), { BUFFER_API_KEY: "b", IMGBB_API_KEY: "i", GROQ_API_KEY: "g" });
+    const rt = buildRuntime(join(REPO_PROFILES, "astronomia"), env, { logger: silentLogger });
     try {
       expect(rt.sources.at(-1)?.type).toBe("manual");
       expect(rt.sources.length).toBe(12);
-      expect(rt.publishers.buffer).toBeUndefined();
       expect(rt.bot).toBeUndefined();
       expect(rt.app.status().profileName).toBe("Céu de Hoje");
     } finally {
@@ -37,8 +37,18 @@ describe("buildRuntime", () => {
     }
   });
 
+  it("astronomia com destino Buffer e mídia exige BUFFER_API_KEY e host (erro com o nome, sem valor)", () => {
+    expect(() => buildRuntime(join(REPO_PROFILES, "astronomia"), cleanEnv(tmpDir()), { logger: silentLogger })).toThrow(/BUFFER_API_KEY/);
+    expect(() => buildRuntime(join(REPO_PROFILES, "astronomia"), cleanEnv(tmpDir(), { BUFFER_API_KEY: "segredo-x" }), { logger: silentLogger })).toThrow(/IMGBB_API_KEY ou as variáveis R2_/);
+    try {
+      buildRuntime(join(REPO_PROFILES, "astronomia"), cleanEnv(tmpDir(), { BUFFER_API_KEY: "segredo-x" }), { logger: silentLogger });
+    } catch (e) {
+      expect(String((e as Error).message)).not.toContain("segredo-x");
+    }
+  });
+
   it("builds the bot and a buffer publisher when configured; refuses without token or chat", () => {
-    const env = cleanEnv(tmpDir(), { TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_CHAT_IDS: "7", BUFFER_API_KEY: "b" });
+    const env = cleanEnv(tmpDir(), { TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_CHAT_IDS: "7", BUFFER_API_KEY: "b", IMGBB_API_KEY: "i", GROQ_API_KEY: "g" });
     const rt = buildRuntime(join(REPO_PROFILES, "astronomia"), env, { withTelegram: true, logger: silentLogger });
     try {
       expect(rt.bot).toBeDefined();

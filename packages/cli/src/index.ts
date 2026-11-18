@@ -1,4 +1,6 @@
-export { run, COMMANDS, HELP } from "./main.js";
+export { run, COMMANDS, HELP, type RunOptions } from "./main.js";
+export { type KitPlugins } from "./plugins.js";
+export { resolveParts, type ConfigIssue, type RuntimeParts } from "./checks.js";
 export { parseCommandLine } from "./args.js";
 export { resolveProfile, listProfileIds, defaultProfilesRoot } from "./profile.js";
 export { buildRuntime, parseChatIds, uiConfig, buildSources, type Runtime, type BuildOptions } from "./wire.js";

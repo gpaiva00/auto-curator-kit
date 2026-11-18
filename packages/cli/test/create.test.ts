@@ -10,7 +10,7 @@ describe("create", () => {
   it.each(["news-card", "thought-leader"])("scaffolds a profile that loads (%s)", async (template) => {
     const root = tmpDir();
     const io = bufferIo();
-    const code = await run(["create", "meu-perfil", "--template", template, "--name", "Meu Perfil"], cleanEnv(tmpDir()), io, root);
+    const code = await run(["create", "meu-perfil", "--template", template, "--name", "Meu Perfil"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: root });
     expect(code).toBe(0);
     const dir = join(root, "meu-perfil");
     for (const f of ["profile.json", "style-guide.md", ".env.example", "evals/cases.json"]) expect(existsSync(join(dir, f))).toBe(true);
@@ -29,7 +29,7 @@ describe("create", () => {
 
   it("derives the name from the id and defaults to news-card", async () => {
     const root = tmpDir();
-    expect(await run(["create", "ceu-de-hoje"], cleanEnv(tmpDir()), bufferIo(), root)).toBe(0);
+    expect(await run(["create", "ceu-de-hoje"], { env: cleanEnv(tmpDir()), io: bufferIo(), profilesRoot: root })).toBe(0);
     const p = JSON.parse(readFileSync(join(root, "ceu-de-hoje/profile.json"), "utf8"));
     expect(p).toMatchObject({ name: "Ceu De Hoje", template: "news-card" });
   });
@@ -38,7 +38,7 @@ describe("create", () => {
     const root = tmpDir();
     mkdirSync(join(root, "ja-existe"));
     const io = bufferIo();
-    expect(await run(["create", "ja-existe"], cleanEnv(tmpDir()), io, root)).toBe(1);
+    expect(await run(["create", "ja-existe"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: root })).toBe(1);
     expect(io.text()).toContain("já existe");
     expect(existsSync(join(root, "ja-existe", "profile.json"))).toBe(false);
   });
@@ -46,8 +46,8 @@ describe("create", () => {
   it("rejects bad ids and unknown templates without writing anything", async () => {
     const root = tmpDir();
     const io = bufferIo();
-    expect(await run(["create", "Nome Ruim"], cleanEnv(tmpDir()), io, root)).toBe(1);
-    expect(await run(["create", "ok", "--template", "nao-existe"], cleanEnv(tmpDir()), io, root)).toBe(1);
+    expect(await run(["create", "Nome Ruim"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: root })).toBe(1);
+    expect(await run(["create", "ok", "--template", "nao-existe"], { env: cleanEnv(tmpDir()), io: io, profilesRoot: root })).toBe(1);
     expect(io.text()).toContain("news-card");
     expect(existsSync(join(root, "ok"))).toBe(false);
   });

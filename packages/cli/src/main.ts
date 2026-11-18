@@ -8,7 +8,8 @@ import { evalCommand } from "./commands/eval.js";
 import { scanCommand } from "./commands/scan.js";
 import { startCommand } from "./commands/start.js";
 import { statusCommand } from "./commands/status.js";
-import { consoleIo, type CmdCtx } from "./io.js";
+import { consoleIo, type CmdCtx, type Io } from "./io.js";
+import type { KitPlugins } from "./plugins.js";
 
 export const HELP = `auto-curator: motor para perfis curados por IA com aprovação no Telegram
 
@@ -38,8 +39,20 @@ export const COMMANDS: Record<string, Handler> = {
   status: statusCommand,
 };
 
+export interface RunOptions {
+  env?: NodeJS.ProcessEnv;
+  io?: Io;
+  /** Pasta com profiles/<id> (PROFILES_DIR). */
+  profilesRoot?: string;
+  /** Pontos de extensão do projeto (seção 3). Sem registro global obrigatório. */
+  plugins?: KitPlugins;
+}
+
 /** Runs one command line and returns the exit code (never calls process.exit). */
-export async function run(argv: string[], env: NodeJS.ProcessEnv = process.env, io = consoleIo, profilesRoot?: string): Promise<number> {
+export async function run(argv: string[], opts: RunOptions = {}): Promise<number> {
+  const env = opts.env ?? process.env;
+  const io = opts.io ?? consoleIo;
+  const { profilesRoot, plugins } = opts;
   try {
     const args = parseCommandLine(argv);
     if (!args.command || args.command === "help" || (args.help && !COMMANDS[args.command])) {
@@ -56,7 +69,7 @@ export async function run(argv: string[], env: NodeJS.ProcessEnv = process.env, 
       io.out(HELP);
       return 0;
     }
-    return await handler({ env, io, args, profilesRoot });
+    return await handler({ env, io, args, profilesRoot, plugins });
   } catch (e) {
     io.err(`❌ ${errMsg(e)}`);
     return 1;

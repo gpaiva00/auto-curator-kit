@@ -15,7 +15,7 @@ export interface StartOptions {
 /** Starts bot + scheduler and resolves (exit code) after a graceful shutdown. */
 export async function startCommand(ctx: CmdCtx, opts: StartOptions = {}): Promise<number> {
   const dir = resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot);
-  const rt = buildRuntime(dir, ctx.env, { withTelegram: true });
+  const rt = buildRuntime(dir, ctx.env, { withTelegram: true, plugins: ctx.plugins });
   const o = ctx.io.out;
   const bot = rt.bot!;
   let release: () => void;

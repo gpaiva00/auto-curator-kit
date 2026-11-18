@@ -4,7 +4,7 @@ import { resolveProfile } from "../profile.js";
 import { buildRuntime } from "../wire.js";
 
 export async function statusCommand(ctx: CmdCtx): Promise<number> {
-  const rt = buildRuntime(resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot), ctx.env);
+  const rt = buildRuntime(resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot), ctx.env, { plugins: ctx.plugins });
   try {
     ctx.io.out(statusText(rt.app.status()));
     const runs = rt.store.recentJobRuns(5);

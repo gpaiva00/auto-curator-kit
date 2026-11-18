@@ -26,7 +26,7 @@ const clip = (s: string, n: number) => (s.replace(/\s+/g, " ").trim().length <= 
 /** Runs every source once, without LLM. Prints what would be ingested and why the rest is filtered; unless --dry, ingests it. */
 export async function scanCommand(ctx: CmdCtx): Promise<number> {
   const dir = resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot);
-  const rt = buildRuntime(dir, ctx.env, { logger: undefined });
+  const rt = buildRuntime(dir, ctx.env, { plugins: ctx.plugins });
   const o = ctx.io.out;
   try {
     const { bundle, store } = rt;

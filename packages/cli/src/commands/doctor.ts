@@ -9,6 +9,8 @@ import { createSource, resolveCdpUrl } from "@auto-curator/sources";
 import { TelegramApi } from "@auto-curator/telegram";
 import type { CmdCtx } from "../io.js";
 import { brl } from "../format.js";
+import { resolveParts } from "../checks.js";
+import type { KitPlugins } from "../plugins.js";
 import { resolveProfile } from "../profile.js";
 import { parseChatIds } from "../wire.js";
 
@@ -35,6 +37,7 @@ export function roleKeyEnvs(role: ModelsConfig["roles"]["triage"]): string[] {
 export interface DoctorOptions {
   offline: boolean;
   fetch?: typeof fetch;
+  plugins?: KitPlugins;
 }
 
 /** Runs every check; never throws. */
@@ -113,6 +116,13 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
   if (chats.length === 0) add("fail", "Telegram: TELEGRAM_ALLOWED_CHAT_IDS", "informe seu chat id (use @userinfobot); sem isso ninguém aprova");
   else add("ok", `Telegram: ${chats.length} chat(s) autorizado(s)`);
 
+  // configuração conferida contra fontes, publicadores e host do projeto (mesma regra do buildRuntime)
+  const parts = resolveParts(bundle, env, { plugins: opts.plugins });
+  for (const i of parts.issues.filter((x) => x.kind === "profile" || x.kind === "source" || x.kind === "publisher" || x.kind === "host")) {
+    const label = i.kind === "profile" ? "Perfil" : i.kind === "source" ? "Fontes" : i.kind === "publisher" ? "Publicação" : "Mídia";
+    add(i.level === "error" ? "fail" : "warn", label, i.text);
+  }
+
   // sources
   const enabled = profile.sources.filter((s) => s.enabled !== false);
   if (enabled.length === 0) add("warn", "Fontes", "nenhuma fonte ativa no profile.json");
@@ -120,11 +130,11 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
   for (const cfg of enabled) {
     const label = `Fonte ${cfg.type}${cfg.name ? ` "${cfg.name}"` : ""}`;
     try {
-      createSource(cfg, { env, logger: silentLogger });
+      createSource(cfg, { env, logger: silentLogger }, parts.table);
       add("ok", label);
       if (BROWSER_SOURCES.has(cfg.type)) cdpNeeded.push(cfg.type);
-    } catch (e) {
-      add("fail", label, errMsg(e));
+    } catch {
+      // o motivo já aparece como problema de configuração acima
     }
   }
   if (cdpNeeded.length) {
@@ -140,9 +150,13 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
       }
   }
 
-  // Buffer
+  // Publicação: com plugins.publishers, os ids vêm do projeto; sem, vale o Buffer pelo .env
   const buffered = profile.destinations.filter((d) => d.publisher === "buffer");
-  if (buffered.length) await bufferChecks(buffered, env, opts, profile.media.strategy !== "none", add);
+  if (opts.plugins?.publishers !== undefined) {
+    for (const d of profile.destinations.filter((x) => x.publisher !== "manual")) {
+      if (parts.publishers[d.publisher]) add("ok", `Publicação: ${d.platform} → "${d.publisher}" (plugin)`);
+    }
+  } else if (buffered.length) await bufferChecks(buffered, env, opts, profile.media.strategy !== "none", add);
   else add("ok", "Publicação: todos os destinos são manuais (copiar e colar pelo Telegram)");
 
   // media tools
@@ -205,7 +219,7 @@ export async function doctorCommand(ctx: CmdCtx, extra: { fetch?: typeof fetch }
   const dir = resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot);
   ctx.io.out(`Diagnóstico do perfil em ${dir}${ctx.args.offline ? " (offline: sem chamadas de rede)" : ""}`);
   ctx.io.out();
-  const checks = await runChecks(dir, ctx.env, { offline: ctx.args.offline, fetch: extra.fetch });
+  const checks = await runChecks(dir, ctx.env, { offline: ctx.args.offline, fetch: extra.fetch, plugins: ctx.plugins });
   for (const c of checks) ctx.io.out(formatCheck(c));
   const fails = checks.filter((c) => c.level === "fail").length;
   const warns = checks.filter((c) => c.level === "warn").length;

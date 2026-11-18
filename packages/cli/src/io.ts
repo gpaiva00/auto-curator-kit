@@ -1,3 +1,5 @@
+import type { KitPlugins } from "./plugins.js";
+
 /** Where commands print. Tests inject a buffer; the real CLI uses the console. */
 export interface Io {
   out(line?: string): void;
@@ -27,6 +29,8 @@ export interface CmdCtx {
   args: ParsedArgs;
   /** Root that holds profiles/<id> (injectable for tests). Default: <repo>/profiles. */
   profilesRoot?: string;
+  /** Extension points of the project (seção 3). */
+  plugins?: KitPlugins;
 }
 
 export interface ParsedArgs {

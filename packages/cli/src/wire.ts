@@ -11,9 +11,10 @@ import {
 } from "@auto-curator/contracts";
 import { App, ConfigError, FilePromptProvider, LlmClient, Store, createLogger, loadProfile, loadVeto, type ProfileBundle, type VetoRules } from "@auto-curator/engine";
 import { createDownloaderFromEnv, createPreparer } from "@auto-curator/media";
-import { createBufferFromEnv, createMediaHostFromEnv } from "@auto-curator/publishers";
-import { createSource, orderForInput } from "@auto-curator/sources";
+import { createSource, orderForInput, type SourceEntry } from "@auto-curator/sources";
 import { TelegramApi, TelegramBot } from "@auto-curator/telegram";
+import { resolveParts } from "./checks.js";
+import type { KitPlugins } from "./plugins.js";
 
 export interface Runtime {
   bundle: ProfileBundle;
@@ -37,6 +38,8 @@ export interface BuildOptions {
   logger?: Logger;
   /** Test seam for the Telegram API. */
   telegramFetch?: typeof fetch;
+  /** Extension points of the project (seção 3): sources, publishers, mediaHost. */
+  plugins?: KitPlugins;
 }
 
 /** TELEGRAM_ALLOWED_CHAT_IDS (comma/space separated); falls back to the legacy singular TELEGRAM_ALLOWED_CHAT_ID. */
@@ -62,8 +65,8 @@ export function uiConfig(bundle: ProfileBundle): ApprovalUiConfig {
 }
 
 /** Sources of the profile (enabled entries only), "manual" last so /add tries the specific ones first. */
-export function buildSources(bundle: ProfileBundle, env: NodeJS.ProcessEnv, logger: Logger): Source[] {
-  const sources = bundle.profile.sources.filter((s) => s.enabled !== false).map((cfg) => createSource(cfg, { env, logger }));
+export function buildSources(bundle: ProfileBundle, env: NodeJS.ProcessEnv, logger: Logger, table?: Map<string, SourceEntry>): Source[] {
+  const sources = bundle.profile.sources.filter((s) => s.enabled !== false).map((cfg) => createSource(cfg, { env, logger }, table));
   return orderForInput(sources);
 }
 
@@ -73,17 +76,22 @@ export function buildRuntime(profileDir: string, env: NodeJS.ProcessEnv, opts: B
   const logger = opts.logger ?? createLogger();
   const { profile } = bundle;
 
+  // Antes de qualquer banco ou rede: fontes, publicadores, host e variáveis das partes ligadas.
+  const parts = resolveParts(bundle, env, { plugins: opts.plugins, withTelegram: opts.withTelegram });
+  for (const w of parts.issues.filter((i) => i.level === "warning")) logger.warn(w.text);
+  const errors = parts.issues.filter((i) => i.level === "error");
+  if (errors.length) throw new ConfigError(`Configuração inválida:\n${errors.map((e) => `  - ${e.text}`).join("\n")}`);
+
   mkdirSync(bundle.dataDir, { recursive: true });
   const store = new Store({ path: join(bundle.dataDir, "curator.db"), timezone: profile.timezone });
   try {
     const llm = new LlmClient({ models: bundle.models, store, env, logger });
     const prompts = new FilePromptProvider({ profileDir: bundle.profileDir, templateDir: bundle.templateDir, profile, draftExtraRequired: bundle.template.draftExtraRequired });
     const veto = loadVeto(bundle.profileDir, profile.editorial, logger);
-    const sources = buildSources(bundle, env, logger);
+    const sources = buildSources(bundle, env, logger, parts.table);
     const preparer = createPreparer(profile, { logger, downloader: createDownloaderFromEnv(env) });
 
-    const buffer = createBufferFromEnv(env, profile.destinations, createMediaHostFromEnv(env));
-    const publishers: Record<string, Publisher> = buffer ? { buffer } : {};
+    const publishers: Record<string, Publisher> = parts.publishers;
 
     // The bot needs the App (actions) and the App needs the bot (notifier): break the cycle with a late-bound proxy.
     let bot: TelegramBot | undefined;
@@ -100,11 +108,9 @@ export function buildRuntime(profileDir: string, env: NodeJS.ProcessEnv, opts: B
     const app = new App({ bundle, store, llm, prompts, sources, preparer, publishers, notifier, logger, env, veto });
 
     if (opts.withTelegram) {
-      const token = env.TELEGRAM_BOT_TOKEN?.trim();
-      const chats = parseChatIds(env);
-      if (!token) throw new ConfigError("TELEGRAM_BOT_TOKEN não definido. Crie o bot no @BotFather e preencha o .env do perfil.");
-      if (chats.length === 0) throw new ConfigError("TELEGRAM_ALLOWED_CHAT_IDS não definido. Informe o(s) id(s) de chat autorizados a aprovar (use @userinfobot).");
-      bot = new TelegramBot({ api: new TelegramApi(token, opts.telegramFetch), allowedChatIds: chats, allowedUserIds: parseUserIds(env), store, actions: app, ui: uiConfig(bundle), logger });
+      // as variáveis do Telegram já foram conferidas em resolveParts
+      const token = env.TELEGRAM_BOT_TOKEN?.trim() as string;
+      bot = new TelegramBot({ api: new TelegramApi(token, opts.telegramFetch), allowedChatIds: parseChatIds(env), allowedUserIds: parseUserIds(env), store, actions: app, ui: uiConfig(bundle), logger });
     }
 
     return { bundle, store, llm, prompts, veto, sources, preparer, publishers, app, bot, logger, env, close: () => store.close() };

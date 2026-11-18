@@ -16,7 +16,7 @@ describe("every shipped profile", () => {
 
   for (const id of PROFILES) {
     it(`${id}: buildRuntime wires with Telegram and Buffer env`, () => {
-      const env = cleanEnv(tmpDir(), { TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_CHAT_IDS: "7", BUFFER_API_KEY: "b" });
+      const env = cleanEnv(tmpDir(), { TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_CHAT_IDS: "7", BUFFER_API_KEY: "b", IMGBB_API_KEY: "i", GROQ_API_KEY: "g" });
       const rt = buildRuntime(join(REPO_PROFILES, id), env, { withTelegram: true, logger: silentLogger, telegramFetch: (async () => new Response("{}")) as typeof fetch });
       try {
         expect(rt.bot).toBeDefined();

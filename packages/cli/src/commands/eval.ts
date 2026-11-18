@@ -63,7 +63,7 @@ export interface EvalRow {
 
 export async function evalCommand(ctx: CmdCtx): Promise<number> {
   const dir = resolveProfile(ctx.args.profile, ctx.env, ctx.profilesRoot);
-  const rt = buildRuntime(dir, ctx.env);
+  const rt = buildRuntime(dir, ctx.env, { plugins: ctx.plugins });
   const o = ctx.io.out;
   try {
     const { bundle, store } = rt;
