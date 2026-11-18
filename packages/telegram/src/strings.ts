@@ -75,6 +75,11 @@ export const S = {
   unknownCommand: "❓ Comando desconhecido. Use /ajuda.",
   notUnderstood: "🤔 Não entendi. Use /ajuda.",
   error: (e: string) => `❌ Erro: ${e}`,
+  // settings
+  configTitle: "⚙️ Configurações",
+  definirUsage: "ℹ️ Uso: /definir <chave> <valor>. As chaves aparecem em /config.",
+  settingChanged: (label: string, value: string) => `✅ ${label}: ${value}`,
+  settingRestart: "Vale a partir do próximo reinício do app (`bun run start`).",
   readingFailed: (e: string) => `❌ Falha ao ler as fontes: ${e}`,
 
   // lists

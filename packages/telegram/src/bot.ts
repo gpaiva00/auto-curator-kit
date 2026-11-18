@@ -2,7 +2,7 @@ import { errMsg, silentLogger, type ApprovalUiConfig, type BotActions, type Draf
 import { TelegramApi, TelegramError, type InlineKeyboard, type Update } from "./api.js";
 import { BOT_COMMANDS, menuCommands, resolveCommand, type CommandName } from "./commands.js";
 import { approvalKeyboard, manualKeyboard, parseCallback, reasonsKeyboard } from "./keyboards.js";
-import { agendaText, approvalText, finalText, helpText, outcomeText, pendingText, postLabel, queueText, statusText } from "./messages.js";
+import { agendaText, approvalText, configText, finalText, helpText, outcomeText, pendingText, postLabel, queueText, statusText } from "./messages.js";
 import { S } from "./strings.js";
 
 export { BOT_COMMANDS };
@@ -260,6 +260,19 @@ export class TelegramBot implements Notifier {
       case "retomar":
         actions.setPaused(false);
         return void (await this.reply(chat, S.resumed));
+      case "config":
+        return void (await this.reply(chat, configText(actions.settings())));
+      case "definir": {
+        const [key, ...rest] = arg.split(/\s+/);
+        const value = rest.join(" ").trim();
+        if (!key || !value) return void (await this.reply(chat, S.definirUsage));
+        try {
+          const s = await actions.setSetting(key, value);
+          return void (await this.reply(chat, `${S.settingChanged(s.label, String(s.value))}\n\n${S.settingRestart}`));
+        } catch (e) {
+          return void (await this.reply(chat, S.error(errMsg(e))));
+        }
+      }
       case "cancelar":
         return void (await this.reply(chat, hadAwait ? S.cancelled : S.nothingToCancel));
       case "ajuda":

@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_REJECT_REASONS, type ApprovalUiConfig, type BotActions, type Destination, type Draft, type DestinationOutcome, type Item, type Publication, type Status, type StatusSnapshot, type StorePort } from "@auto-curator/contracts";
+import { DEFAULT_REJECT_REASONS, SETTINGS, type SettingView, type ApprovalUiConfig, type BotActions, type Destination, type Draft, type DestinationOutcome, type Item, type Publication, type Status, type StatusSnapshot, type StorePort } from "@auto-curator/contracts";
 import { TelegramApi, TelegramBot } from "../src/index.js";
 
 export interface Call {
@@ -181,6 +181,14 @@ export class FakeActions implements BotActions {
   setPaused(p: boolean) {
     this.paused = p;
     this.log.push(`paused:${p}`);
+  }
+  settings(): SettingView[] {
+    return [{ ...SETTINGS[0]!, value: 8 }];
+  }
+  async setSetting(key: string, raw: string): Promise<SettingView> {
+    this.log.push(`set:${key}=${raw}`);
+    if (raw === "bad") throw new Error("valor inválido");
+    return { ...SETTINGS[0]!, value: Number(raw) };
   }
   status(): StatusSnapshot {
     return { profileName: "Perfil Teste", paused: this.paused, counts: { pending_approval: 2, ready: 1 }, spendBRL: 12.5, budgetBRL: 50, presentedToday: 3, dailyApprovalCap: 8, gate: "Geração pausada: fila cheia" };

@@ -20,11 +20,13 @@ import {
   type Publisher,
   type RawItem,
   type Source,
+  type SettingView,
   type StatusSnapshot,
 } from "@auto-curator/contracts";
 import type { ProfileBundle } from "./config.js";
 import * as jobs from "./jobs.js";
 import { loadVeto, queueGate, type VetoRules } from "./policy.js";
+import { saveProfileSetting, settingViews } from "./settings.js";
 import type { Store } from "./store.js";
 
 export interface AppDeps {
@@ -288,6 +290,14 @@ export class App implements BotActions {
   setPaused(p: boolean): void {
     if (p) this.store.kvSet(PAUSE_KEY, "1");
     else this.store.kvDel(PAUSE_KEY);
+  }
+
+  settings(): SettingView[] {
+    return settingViews(this.bundle.profile);
+  }
+
+  async setSetting(key: string, raw: string): Promise<SettingView> {
+    return saveProfileSetting(this.bundle.profileDir, key, raw);
   }
 
   status(): StatusSnapshot {

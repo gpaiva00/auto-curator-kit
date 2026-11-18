@@ -95,6 +95,19 @@ describe("commands and aliases", () => {
     expect(t.actions.log).toEqual(["paused:true", "paused:false"]);
   });
 
+  it("/config lists settings; /definir changes one (usage, errors, success)", async () => {
+    const t = setup();
+    await t.text("/config");
+    expect(t.sent().some((s) => s.includes("Configurações") && s.includes("/definir aprovacoes_dia"))).toBe(true);
+    await t.text("/definir aprovacoes_dia");
+    expect(t.sent().some((s) => s.includes("Uso: /definir"))).toBe(true);
+    await t.text("/definir aprovacoes_dia bad");
+    expect(t.sent().some((s) => s.includes("Erro: valor inválido"))).toBe(true);
+    await t.text("/set aprovacoes_dia 5");
+    expect(t.actions.log).toEqual(["set:aprovacoes_dia=bad", "set:aprovacoes_dia=5"]);
+    expect(t.sent().some((s) => s.includes("reinício"))).toBe(true);
+  });
+
   it("/add, bare URL triggers add, errors and usage", async () => {
     const t = setup();
     await t.text("/add https://x.com/a/status/1 comentário");

@@ -118,6 +118,8 @@ Os comandos são em português. Os aliases em inglês também funcionam. Mensage
 | `/status` | — | Contagens, gasto de IA, limite diário e motivo de espera, se houver. |
 | `/pausar` | `/pause` | Pausa a ingestão e o pipeline agendados. `/ler` e `/add` continuam funcionando. |
 | `/retomar` | `/resume` | Retoma a geração. |
+| `/config` | `/configs` | Mostra as configurações que podem ser mudadas pelo Telegram, com os valores atuais. |
+| `/definir <chave> <valor>` | `/set` | Muda uma configuração do perfil (ex.: `/definir aprovacoes_dia 5`). Vale após reiniciar o app. Segredos (`.env`) não são alteráveis pelo chat. |
 | `/cancelar` | `/cancel` | Cancela a edição em andamento. |
 | `/ajuda` | `/help`, `/start` | Lista os comandos. |
 

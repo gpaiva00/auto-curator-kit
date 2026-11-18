@@ -6,6 +6,7 @@ import type { z } from "zod";
 import type { Destination, LlmRole, ProfileConfig, RejectReason, SourceConfig } from "./config.js";
 import type { Draft } from "./draft.js";
 import type { Item, PreparedMedia, RawItem, Status } from "./item.js";
+import type { SettingView } from "./settings.js";
 
 // ------------------------------------------------------------------ basics
 
@@ -210,6 +211,10 @@ export interface BotActions {
   isPaused(): boolean;
   setPaused(p: boolean): void;
   status(): StatusSnapshot;
+  /** /config: the settings Telegram can change, with their current values. */
+  settings(): SettingView[];
+  /** /definir: changes one setting in profile.json (validated, rolled back if invalid). Throws with the reason. */
+  setSetting(key: string, raw: string): Promise<SettingView>;
 }
 
 export interface StatusSnapshot {

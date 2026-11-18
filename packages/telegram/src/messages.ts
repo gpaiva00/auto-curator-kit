@@ -1,4 +1,4 @@
-import { composeText, type ApprovalUiConfig, type DestinationOutcome, type Item, type StatusSnapshot } from "@auto-curator/contracts";
+import { composeText, type ApprovalUiConfig, type DestinationOutcome, type Item, type SettingView, type StatusSnapshot } from "@auto-curator/contracts";
 import { BOT_COMMANDS } from "./commands.js";
 import { S } from "./strings.js";
 
@@ -119,6 +119,13 @@ export function statusText(s: StatusSnapshot): string {
     countLines,
     [S.statusToday(s.presentedToday, s.dailyApprovalCap), S.statusSpend(s.spendBRL.toFixed(2), s.budgetBRL.toFixed(2))].join("\n"),
     s.gate ? S.statusGate(s.gate) : undefined,
+  );
+}
+
+export function configText(views: SettingView[]): string {
+  return block(
+    S.configTitle,
+    bullets(views.map((v) => `/definir ${v.key} <valor> — ${v.label}: ${v.value}`)),
   );
 }
 

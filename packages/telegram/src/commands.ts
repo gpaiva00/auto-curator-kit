@@ -10,6 +10,8 @@ export const BOT_COMMANDS = [
   { name: "status", aliases: [], args: "", description: "Contagens, gasto de IA, limites e pausa" },
   { name: "pausar", aliases: ["pause"], args: "", description: "Pausa a geração de novos itens" },
   { name: "retomar", aliases: ["resume"], args: "", description: "Retoma a geração" },
+  { name: "config", aliases: ["configs"], args: "", description: "Mostra as configurações que podem ser mudadas aqui" },
+  { name: "definir", aliases: ["set"], args: "<chave> <valor>", description: "Muda uma configuração (ex.: /definir aprovacoes_dia 5)" },
   { name: "cancelar", aliases: ["cancel"], args: "", description: "Cancela a edição em andamento" },
   { name: "ajuda", aliases: ["help", "start"], args: "", description: "Lista os comandos" },
 ] as const;
