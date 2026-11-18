@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, join, resolve } from "node:path";
+import { isAbsolute, join, resolve, sep } from "node:path";
 import { z } from "zod";
 import { KitError, ModelsConfig, ProfileConfig, TemplateConfig } from "@auto-curator/contracts";
-import { kitRoot } from "@auto-curator/contracts/kit-root";
+import { isInstalledKit, kitRoot } from "@auto-curator/contracts/kit-root";
 
 export class ConfigError extends KitError {
   constructor(message: string) {
@@ -76,6 +76,14 @@ export function resolveProfileDir(arg: string | undefined, env: NodeJS.ProcessEn
   return resolve(dir);
 }
 
+/** Instalado como dependência e o alvo cai dentro da pasta do pacote: nada pode ser gravado ali. */
+export function insideInstalledKit(target: string, root: string = KIT_ROOT): boolean {
+  if (!isInstalledKit(root)) return false;
+  const t = resolve(target);
+  const r = resolve(root);
+  return t === r || t.startsWith(r + sep);
+}
+
 export function templatesRoot(env: NodeJS.ProcessEnv = process.env): string {
   return env.TEMPLATES_DIR ? resolve(env.TEMPLATES_DIR) : join(KIT_ROOT, "templates");
 }
@@ -102,6 +110,8 @@ export function loadProfile(profileDirArg?: string, env: NodeJS.ProcessEnv = pro
   const modelsFile = profile.models === "default" ? join(templateDir, "models.json") : isAbsolute(profile.models) ? profile.models : join(profileDir, profile.models);
   const models = parseWith(ModelsConfig, readJson(modelsFile, "models.json"), "models.json", modelsFile);
 
-  const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(KIT_ROOT, "data", profile.id));
+  const dataDir = resolve(env.CURADOR_DATA_DIR ?? join(profileDir, "data"));
+  if (insideInstalledKit(dataDir)) throw new ConfigError("Os dados ficariam dentro da instalação do kit (node_modules). Defina CURADOR_DATA_DIR com uma pasta fora dela.");
+  if (insideInstalledKit(profileDir)) throw new ConfigError("O perfil está dentro da instalação do kit (node_modules). Copie-o para uma pasta sua e aponte --profile para ela.");
   return { profile, template, templateDir, models, profileDir, dataDir };
 }

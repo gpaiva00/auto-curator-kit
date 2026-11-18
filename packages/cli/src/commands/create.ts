@@ -148,7 +148,7 @@ IMGBB_API_KEY=
 # R2_PUBLIC_URL=
 ${browser ? "\n# --- Chrome dedicado via CDP (só para fontes de navegador, como x-feed) ---\nBROWSER_CDP_URL=http://127.0.0.1:9222\n" : ""}
 # --- Pastas e log ---
-# CURADOR_DATA_DIR=data/<id>
+# CURADOR_DATA_DIR=   (padrão: <pasta do perfil>/data; defina só para outro lugar)
 LOG_LEVEL=info
 `;
 }
@@ -196,6 +196,7 @@ export async function createCommand(ctx: CmdCtx): Promise<number> {
     return 1;
   }
   const profilesRoot = ctx.profilesRoot ?? defaultProfilesRoot(ctx.env);
+  if (!profilesRoot) throw new ConfigError("Defina PROFILES_DIR com a pasta onde o novo perfil será criado.");
   const r = scaffoldProfile({ id, template: ctx.args.template, name: ctx.args.name, profilesRoot, templatesRoot: templatesRoot(ctx.env) });
   const o = ctx.io.out;
   o(`✅ Perfil "${r.name}" criado em ${r.dir}`);
