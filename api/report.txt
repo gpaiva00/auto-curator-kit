@@ -22,6 +22,7 @@ EditorialConfig
 Hashtag
 Item
 JsonRequest
+KIT_PROFILE_VERSION
 KitError
 LLM_ROLES
 LlmPort
