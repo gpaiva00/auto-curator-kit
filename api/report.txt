@@ -2,7 +2,9 @@
 BuildOptions
 ConfigError
 KitError
+KitPlugins
 ProfileBundle
+RunOptions
 Runtime
 buildRuntime
 kitVersion
