@@ -8,3 +8,4 @@ profiles.local/
 *.db-*
 out/
 .DS_Store
+.claude/
