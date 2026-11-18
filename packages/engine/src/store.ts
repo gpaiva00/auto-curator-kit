@@ -401,6 +401,22 @@ export class Store implements StorePort {
   publicationsOf(itemId: string): Publication[] {
     return (this.db.prepare("SELECT * FROM publications WHERE item_id = ? ORDER BY created_at, rowid").all(itemId) as Row[]).map(toPublication);
   }
+  /** Latest send moment of a platform's automatic posts: the due time for queued ones, creation time for the rest. */
+  lastSlotAt(platform: string): Date | undefined {
+    const rows = this.db
+      .prepare("SELECT status, created_at, scheduled_at FROM publications WHERE platform = ? AND publisher = 'buffer' AND status != 'failed'")
+      .all(platform) as { status: string; created_at: string; scheduled_at: string | null }[];
+    let best: number | undefined;
+    for (const r of rows) {
+      const t = Date.parse(r.status === "queued" && r.scheduled_at ? r.scheduled_at : r.created_at);
+      if (best === undefined || t > best) best = t;
+    }
+    return best === undefined ? undefined : new Date(best);
+  }
+  /** Queued publications whose due time has come (or passed). */
+  dueQueued(now: Date): Publication[] {
+    return (this.db.prepare("SELECT * FROM publications WHERE status = 'queued' AND scheduled_at <= ? ORDER BY scheduled_at, rowid").all(now.toISOString()) as Row[]).map(toPublication);
+  }
   /** Publications of a platform created today (profile timezone). Failed ones and cap overflows do not count. */
   publicationsToday(platform: string): number {
     const today = dayKey(this.clock.now(), this.timezone);

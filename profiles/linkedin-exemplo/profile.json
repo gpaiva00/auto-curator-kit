@@ -27,6 +27,14 @@
       "mode": "draft",
       "dailyCap": 2,
       "composeUrl": "https://www.linkedin.com/feed/?shareActive=true"
+    },
+    {
+      "platform": "threads",
+      "publisher": "buffer",
+      "mode": "draft",
+      "dailyCap": 4,
+      "minIntervalMinutes": 60,
+      "window": { "start": "08:00", "end": "22:00" }
     }
   ],
 

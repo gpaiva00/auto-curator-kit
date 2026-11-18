@@ -248,3 +248,24 @@ describe("approve: media selection, no-destination and daily cap", () => {
     expect(t.store.list("new", 10, { origin: "manual" })).toHaveLength(1);
   });
 });
+
+describe("per-channel interval and window", () => {
+  it("queues a post that arrives inside the gap and releases it when due", async () => {
+    const t = setup({ profile: { destinations: [{ platform: "threads", publisher: "buffer", minIntervalMinutes: 60 }] } as never });
+    const a = (await t.app.addManual("primeiro post do threads com intervalo"))!.item!;
+    const b = (await t.app.addManual("segundo post do threads com intervalo"))!.item!;
+    await t.app.runPipeline();
+    expect((await t.app.approve(a.id))[0]!.kind).toBe("buffer");
+    const out = await t.app.approve(b.id);
+    expect(out[0]).toMatchObject({ platform: "threads", kind: "queued", scheduledAt: "2026-11-14T16:00:00.000Z" });
+    expect(t.buffer.requests).toHaveLength(1);
+    expect(t.store.publicationsOf(b.id)[0]).toMatchObject({ status: "queued" });
+
+    expect(await t.app.releaseDue()).toMatch(/0 enviado/); // not due yet
+    expect(t.buffer.requests).toHaveLength(1);
+    t.clock.set("2026-11-14T16:00:00.000Z");
+    expect(await t.app.releaseDue()).toMatch(/1 enviado/);
+    expect(t.buffer.requests).toHaveLength(2);
+    expect(t.store.publicationsOf(b.id)[0]).toMatchObject({ status: "scheduled" });
+  });
+});

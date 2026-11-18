@@ -153,7 +153,8 @@ export interface Publication {
   publisher: string;
   externalId: string | null;
   mode: string | null;
-  status: "scheduled" | "published" | "failed" | "manual";
+  /** queued = waiting locally for its channel's interval/window; scheduledAt is then the due time. */
+  status: "queued" | "scheduled" | "published" | "failed" | "manual";
   scheduledAt: string | null;
   error: string | null;
   createdAt: string;
@@ -181,7 +182,7 @@ export interface StorePort {
 export interface DestinationOutcome {
   platform: string;
   /** buffer = sent to Buffer; manual = human must post; failed = Buffer failed, fell back to manual. */
-  kind: "buffer" | "manual" | "failed";
+  kind: "buffer" | "manual" | "failed" | "queued";
   mode?: "draft" | "queue" | "now";
   scheduledAt?: string;
   error?: string;

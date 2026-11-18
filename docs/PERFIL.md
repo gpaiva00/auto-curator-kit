@@ -102,6 +102,8 @@ Cada entrada tem `type` (obrig.), `name` (opcional), `enabled` (padrão `true`) 
 | `mode` | `draft` | Só Buffer: `draft` salva como rascunho; `queue` põe na próxima vaga; `now` publica já. |
 | `channelEnv` | `BUFFER_CHANNEL_<PLATAFORMA>` | Nome da variável que tem o id do canal no Buffer. |
 | `dailyCap` | `4` | Publicações por dia neste destino. Acima do limite, o destino cai para publicação manual com aviso. |
+| `minIntervalMinutes` | `0` | Intervalo mínimo entre duas publicações deste canal. Quem chega antes espera numa fila local e é enviado pelo job `publish`. |
+| `window` | — | Janela de horário no fuso do perfil, `{ "start": "08:00", "end": "22:00" }`. Pode cruzar a meia-noite (`22:00` a `02:00`). Fora dela, o item espera na fila. |
 | `composeUrl` | — | URL do botão "Abrir <plataforma>" no fluxo manual. |
 | `only` | `any` | `any`, `image` ou `video`: só recebe mídias desse tipo. Se não houver nenhuma, o destino é ignorado. |
 

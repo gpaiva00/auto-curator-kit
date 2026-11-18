@@ -51,6 +51,12 @@ export const Destination = z.object({
   channelEnv: z.string().optional(),
   /** Posts per day for this destination. */
   dailyCap: z.number().int().positive().default(4),
+  /** Minimum minutes between two posts on this channel (0 = no gap). Approved items wait in a local queue. */
+  minIntervalMinutes: z.number().int().nonnegative().optional(),
+  /** Posting window in the profile timezone, "HH:MM" to "HH:MM" (may wrap midnight). Omit = any time. */
+  window: z
+    .object({ start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/) })
+    .optional(),
   /** URL opened by the "Abrir <plataforma>" button in the manual flow. */
   composeUrl: z.string().url().optional(),
   /** Only post items with this media kind here (e.g. tiktok only takes video). */

@@ -26,6 +26,7 @@ import {
 import type { ProfileBundle } from "./config.js";
 import * as jobs from "./jobs.js";
 import { loadVeto, queueGate, type VetoRules } from "./policy.js";
+import { nextSlot } from "./slots.js";
 import { saveProfileSetting, settingViews } from "./settings.js";
 import type { Store } from "./store.js";
 
@@ -221,6 +222,16 @@ export class App implements BotActions {
       }
       if (dest.publisher === "buffer") {
         const pub = this.d.publishers.buffer;
+        const now = this.clock.now();
+        // No interval and no window: slot is `now`, so the post goes out as before.
+        const slot = nextSlot(now, dest, this.store.lastSlotAt(dest.platform), this.bundle.profile.timezone);
+        if (slot.getTime() > now.getTime()) {
+          // Channel interval or window says "not yet": keep it locally until releaseDue() sends it.
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "buffer", status: "queued", mode: dest.mode, scheduledAt: slot.toISOString() });
+          outcomes.push({ platform: dest.platform, kind: "queued", scheduledAt: slot.toISOString() });
+          buffered++;
+          continue;
+        }
         try {
           if (!pub) throw new KitError("publisher buffer não configurado", "NO_PUBLISHER");
           const res = await pub.publish({ item, destination: dest, text, firstComment: item.draft.firstComment, media });
@@ -250,6 +261,34 @@ export class App implements BotActions {
     return outcomes;
   }
 
+  /** Sends queued posts whose slot has come. Runs on the "publish" interval. */
+  releaseDue(): Promise<string> {
+    return this.exclusive(async () => {
+      const now = this.clock.now();
+      let sent = 0;
+      let failed = 0;
+      for (const p of this.store.dueQueued(now)) {
+        try {
+          const item = this.store.get(p.itemId);
+          const dest = this.bundle.profile.destinations.find((d) => d.platform === p.platform && d.publisher === "buffer");
+          const pub = this.d.publishers.buffer;
+          if (!item?.draft || !dest) throw new KitError("item ou destino não existe mais", "NOT_FOUND");
+          if (!pub) throw new KitError("publisher buffer não configurado", "NO_PUBLISHER");
+          const media = mediaForDestination(item, dest) ?? [];
+          const text = composeText(item.draft, { credit: this.bundle.profile.editorial.credit });
+          const res = await pub.publish({ item, destination: dest, text, firstComment: item.draft.firstComment, media });
+          this.store.updatePublication(p.id, { status: "scheduled", externalId: res.externalId, mode: res.mode, scheduledAt: res.scheduledAt ?? null });
+          sent++;
+        } catch (e) {
+          this.log.warn(`envio da fila falhou (${p.platform}): ${errMsg(e)}`);
+          this.store.updatePublication(p.id, { status: "failed", error: errMsg(e) });
+          failed++;
+        }
+      }
+      return `fila: ${sent} enviado(s), ${failed} com falha`;
+    });
+  }
+
   async markPublished(id: string, platform: string): Promise<void> {
     const item = this.store.get(id);
     if (!item) throw new KitError(`Item ${id} não encontrado`, "NOT_FOUND");
@@ -268,7 +307,7 @@ export class App implements BotActions {
 
   async agenda(): Promise<{ platform: string; label: string; scheduledAt?: string }[]> {
     const rows = new Map<string, { platform: string; label: string; scheduledAt?: string }>();
-    const local = this.store.listPublications({ status: ["scheduled"], limit: 50 });
+    const local = this.store.listPublications({ status: ["scheduled", "queued"], limit: 50 });
     for (const p of local) {
       const label = this.store.get(p.itemId)?.draft?.headline ?? p.itemId;
       rows.set(p.externalId ?? p.id, { platform: p.platform, label, scheduledAt: p.scheduledAt ?? undefined });

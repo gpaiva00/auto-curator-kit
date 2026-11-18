@@ -32,7 +32,7 @@ export function postLabel(item: { id: string; draft?: { headline: string } | nul
 }
 
 export function platformName(p: string): string {
-  const known: Record<string, string> = { instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok", x: "X" };
+  const known: Record<string, string> = { instagram: "Instagram", linkedin: "LinkedIn", tiktok: "TikTok", threads: "Threads", x: "X" };
   const k = p.toLowerCase();
   return known[k] ?? (p ? p.charAt(0).toUpperCase() + p.slice(1) : p);
 }

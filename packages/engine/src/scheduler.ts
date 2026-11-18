@@ -72,11 +72,11 @@ export class Scheduler {
 }
 
 /** Wires the standard jobs of an App: ingest (reads sources) and pipeline (tick). */
-export function createScheduler(app: { ingestNow(): Promise<string>; tick(): Promise<unknown>; isPaused(): boolean; store: Store; bundle: { profile: { pipeline: { intervalsMinutes: { ingest: number; pipeline: number } } } } }, logger?: Logger): Scheduler {
+export function createScheduler(app: { ingestNow(): Promise<string>; tick(): Promise<unknown>; releaseDue(): Promise<string>; isPaused(): boolean; store: Store; bundle: { profile: { pipeline: { intervalsMinutes: { ingest: number; pipeline: number; publish: number } } } } }, logger?: Logger): Scheduler {
   const iv = app.bundle.profile.pipeline.intervalsMinutes;
   return new Scheduler({
-    jobs: { ingest: () => app.ingestNow(), pipeline: async () => JSON.stringify(await app.tick()) },
-    intervalsMinutes: { ingest: iv.ingest, pipeline: iv.pipeline },
+    jobs: { ingest: () => app.ingestNow(), pipeline: async () => JSON.stringify(await app.tick()), publish: () => app.releaseDue() },
+    intervalsMinutes: { ingest: iv.ingest, pipeline: iv.pipeline, publish: iv.publish },
     store: app.store,
     isPaused: () => app.isPaused(),
     logger,
