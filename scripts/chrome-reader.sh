@@ -68,11 +68,11 @@ if [[ "$MODE" == "headless" ]]; then
   VER="$("$CHROME" --version | awk '{print $3}' | cut -d. -f1)"
   ARGS+=(--headless=new --window-size=1366,900
     --user-agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${VER}.0.0.0 Safari/537.36")
-  open -n -g -a "$CHROME_APP" --args "${ARGS[@]}" about:blank
+  open -n -g -j -a "$CHROME_APP" --args "${ARGS[@]}" about:blank
   echo "Chrome dedicado ($NAME) em modo headless. Perfil: $PROFILE, porta: $PORT."
 else
   # Com janela (abre em segundo plano, sem roubar o foco): você vê e resolve login, idade e desafios na hora.
-  open -n -g -a "$CHROME_APP" --args "${ARGS[@]}" "https://x.com/home" "https://www.instagram.com/"
+  open -n -g -j -a "$CHROME_APP" --args "${ARGS[@]}" "https://x.com/home" "https://www.instagram.com/"
   echo "Chrome dedicado ($NAME) aberto com janela, em segundo plano. Perfil: $PROFILE, porta: $PORT."
   echo "Entre no X e no Instagram com a conta SECUNDÁRIA de leitura (nunca a sua conta principal)."
 fi
