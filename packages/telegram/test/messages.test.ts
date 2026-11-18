@@ -106,3 +106,11 @@ describe("other messages", () => {
     expect(skipNotice(item(), "duplicado")).toBe("⏭ Pulado · p_ab12 · Título do post\n\nMotivo: duplicado");
   });
 });
+
+describe("outcomeText: erro do publicador sem repetir \"Buffer:\"", () => {
+  it("o prefixo do erro do Buffer não aparece duas vezes", () => {
+    const out = outcomeText(item(), [{ platform: "threads", kind: "failed", error: "Buffer: o Threads aceita até 500 caracteres (o post tem 501)" }], "America/Sao_Paulo");
+    expect(out).toContain("o Buffer falhou (o Threads aceita até 500 caracteres (o post tem 501))");
+    expect(out).not.toMatch(/Buffer: o Threads/);
+  });
+});

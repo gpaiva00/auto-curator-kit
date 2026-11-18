@@ -71,7 +71,7 @@ export function outcomeText(item: Item, outcomes: DestinationOutcome[], tz: stri
   for (const o of outcomes) {
     const p = platformName(o.platform);
     if (o.kind === "manual") lines.push(S.outcomeManual(p) + (o.error ? ` (${o.error})` : ""));
-    else if (o.kind === "failed") lines.push(S.outcomeFailed(p, o.error ?? "erro desconhecido"));
+    else if (o.kind === "failed") lines.push(S.outcomeFailed(p, (o.error ?? "erro desconhecido").replace(/^Buffer:\s*/, "")));
     else if (o.scheduledAt) lines.push(S.outcomeScheduled(p, whenText(o.scheduledAt, tz)));
     else lines.push(o.mode === "queue" ? S.outcomeBufferQueue(p) : o.mode === "now" ? S.outcomeBufferNow(p) : S.outcomeBufferDraft(p));
     if (o.droppedMedia) lines.push(S.outcomeDropped(o.droppedMedia));
