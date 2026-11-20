@@ -4,6 +4,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 
 ## [0.2.1] - 2026-11-19
 
+Asset `auto-curator-kit-0.2.1.tgz` · SHA-256 `65e684d89162ae04492a0fe54123781ec7f195d313c32e838442a6fe21e27e3c`
+
 ### Corrigido
 
 - **Curadoria não para no primeiro erro do curador.** Antes, uma falha de rede ou de provedor num item interrompia a curadoria do tick inteiro, e o próximo pontuado só era curado no ciclo seguinte. Agora a falha conta como tentativa do item e a curadoria segue; quando um item termina em skip ou falha, a vaga do teto diário (`dailyApprovalCap`) é liberada no mesmo ciclo. Só o teto de orçamento interrompe.
@@ -14,8 +16,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 - Dependência `sharp` em `^0.35.5`.
 
 ## [0.2.0] - 2026-11-18
-
-Asset `auto-curator-kit-0.2.0.tgz` · SHA-256 `634249d7f5cdc91ef50f52fcdf1630f18a8c7380f07ab3ae360b99f0c6ff2b4e`
 
 ### Quebra
 
