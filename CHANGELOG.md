@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
+## [0.2.1] - 2026-11-19
+
+### Corrigido
+
+- **Curadoria não para no primeiro erro do curador.** Antes, uma falha de rede ou de provedor num item interrompia a curadoria do tick inteiro, e o próximo pontuado só era curado no ciclo seguinte. Agora a falha conta como tentativa do item e a curadoria segue; quando um item termina em skip ou falha, a vaga do teto diário (`dailyApprovalCap`) é liberada no mesmo ciclo. Só o teto de orçamento interrompe.
+- **sharp 0.33.5 → 0.35.5** (dependência de execução do pacote de mídia): corrige CVEs de libvips e libheif do `npm audit` (severidade alta). Sem mudança de API.
+
+### Alterado
+
+- Dependência `sharp` em `^0.35.5`.
+
 ## [0.2.0] - 2026-11-18
 
 Asset `auto-curator-kit-0.2.0.tgz` · SHA-256 `634249d7f5cdc91ef50f52fcdf1630f18a8c7380f07ab3ae360b99f0c6ff2b4e`
