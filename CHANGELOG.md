@@ -2,6 +2,20 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
+## [0.2.4] - 2026-11-20
+
+### Adicionado
+
+- **`maxChars` por destino.** `Destination.maxChars` (inteiro positivo, opcional) é o limite do texto final de cada destino: corpo, hashtags e crédito. Sem o campo, só o Threads por Buffer tem padrão (500), por compatibilidade com perfis antigos.
+- **Contagem no cartão de aprovação.** Uma linha por destino com limite: `Threads: 487/500 ✅`, ou `Threads: 612/500 ⚠️ vai para envio manual a menos que você edite`. Aprovar continua liberado.
+- **Aviso no `doctor`.** Destino com mídia ou Threads por Buffer sem `maxChars` aparece como aviso.
+
+### Corrigido
+
+- **Texto acima do limite do destino vai para envio manual, com a nota certa.** Antes, o Threads recusava o texto no publicador e o item ficava como falha. Agora a regra é genérica no motor, antes da fila e do teto diário: o destino sai como manual com a nota `texto de N caracteres passa do limite de M`. A constante fixa `THREADS_MAX_CHARS` saiu do publicador.
+
+Compatibilidade: um perfil com `maxChars` não carrega no kit 0.2.3 (o schema de destino é estrito). Os outros perfis não mudam.
+
 ## [0.2.3] - 2026-11-20
 
 Asset `auto-curator-kit-0.2.3.tgz` · SHA-256 `205921370a8667c6e61e0800ab659d69034eaac659e25342ed1a9cef4baa2bb0`
