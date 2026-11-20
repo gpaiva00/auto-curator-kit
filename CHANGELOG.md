@@ -2,7 +2,7 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
-## [0.2.4] - 2026-11-20
+## [0.3.0] - 2026-11-20
 
 ### Adicionado
 
