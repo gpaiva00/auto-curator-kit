@@ -54,7 +54,7 @@
   "dependencies": {
     "zod": "^3.25.0",
     "satori": "^0.12.0",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.5",
     "playwright-core": "^1.49.0",
     "@resvg/resvg-js": "^2.6.2",
     "@fontsource/inter": "^5.1.0"
