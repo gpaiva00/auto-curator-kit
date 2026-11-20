@@ -17,7 +17,7 @@ import {
   type SourceContext,
 } from "@auto-curator/contracts";
 import type { ProfileBundle } from "./config.js";
-import { LlmOutputError, unwrapArray } from "./llm.js";
+import { BudgetExceededError, LlmOutputError, unwrapArray } from "./llm.js";
 import { budgetGate, enforceEditorial, matchBlocked, queueGate, withNotes, type VetoRules } from "./policy.js";
 import type { Store } from "./store.js";
 import { sha256 as sha } from "./util.js";
@@ -304,8 +304,14 @@ export async function curate(d: JobDeps): Promise<CurateResult> {
         if (d.store.get(item.id)?.status === "skipped" && item.origin === "manual") await notify(d, "Não consegui curar o item adicionado (saída inválida do LLM repetidas vezes). Ele foi descartado.");
         continue;
       }
-      d.logger.warn(`curadoria interrompida: ${errMsg(e)}`);
-      break;
+      // Falha do item (rede, provedor): conta a tentativa e segue para o próximo, que ainda pode ocupar a vaga do teto neste ciclo.
+      if (e instanceof BudgetExceededError) {
+        d.logger.warn(`curadoria interrompida: ${errMsg(e)}`);
+        break;
+      }
+      res.failed++;
+      failAttempt(d, item, `curador: ${errMsg(e)}`);
+      continue;
     }
   }
   if (res.held) d.logger.info(`curadoria: ${res.held} item(ns) em espera (${res.holdReason})`);
