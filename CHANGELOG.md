@@ -2,6 +2,14 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
+## [0.2.3] - 2026-11-20
+
+### Corrigido
+
+- **Teto de gasto tenta o fallback que couber.** Antes, quando o principal estourava o teto de gasto mensal, a chamada falhava inteira, mesmo com um fallback mais barato dentro do teto. Agora cada provider da cadeia entra só se o custo estimado dele (entrada estimada pelo tamanho do texto, mais saída no pior caso com o `maxTokens` do próprio provider, com o preço dele) couber no teto restante. Se o principal não couber, o primeiro fallback que couber é usado, com log de troca sem valores. Se nenhum couber, `BudgetExceededError` é lançado sem nenhuma requisição, como antes.
+
+Não muda contrato: só fica mais permissivo. O erro de teto continua existindo, com o mesmo código, e só é lançado quando nenhum provider cabe.
+
 ## [0.2.2] - 2026-11-20
 
 Asset `auto-curator-kit-0.2.2.tgz` · SHA-256 `fb1d3d9663c6dc78849611efc2247bf280a7b89fa323b69449318f0a55cc6138`
