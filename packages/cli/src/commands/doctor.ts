@@ -1,8 +1,8 @@
 import { accessSync, constants, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Destination, ModelsConfig } from "@auto-curator/contracts";
+import type { Destination } from "@auto-curator/contracts";
 import { errMsg, silentLogger } from "@auto-curator/contracts";
-import { FilePromptProvider, Store, loadProfile, type ProfileBundle } from "@auto-curator/engine";
+import { FilePromptProvider, Store, describeChain, loadProfile, resolveRoleChain, type ProfileBundle } from "@auto-curator/engine";
 import { createDownloaderFromEnv, ffmpegAvailable } from "@auto-curator/media";
 import { channelsFromEnv, createBufferFromEnv, createMediaHostFromEnv } from "@auto-curator/publishers";
 import { createSource, resolveCdpUrl } from "@auto-curator/sources";
@@ -28,11 +28,6 @@ export const formatCheck = (c: Check): string => `${ICON[c.level]} ${c.label}${c
 const BROWSER_SOURCES = new Set(["x-feed", "instagram-profile"]);
 const PLACEHOLDER = /\(preencher\)|\(seu nome\)|\(vazio\)|<seu nome>/i;
 
-/** Every API key env name of a role: primary first, then fallbacks. */
-export function roleKeyEnvs(role: ModelsConfig["roles"]["triage"]): string[] {
-  const fb = role.fallback === undefined ? [] : Array.isArray(role.fallback) ? role.fallback : [role.fallback];
-  return [...new Set([role.apiKeyEnv, ...fb.map((f) => f.apiKeyEnv)])];
-}
 
 export interface DoctorOptions {
   offline: boolean;
@@ -83,12 +78,11 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
     else add("ok", "style-guide.md preenchido");
   }
 
-  // API keys per role
+  // cadeia de LLM por papel (regra única: resolveRoleChain)
   for (const role of ["triage", "curator"] as const) {
-    const names = roleKeyEnvs(models.roles[role]);
-    const set = names.filter((n) => env[n]?.trim());
-    if (set.length === 0) add("fail", `Chave de API para "${role}"`, `defina ao menos uma: ${names.join(", ")}`);
-    else add("ok", `Chave de API para "${role}": ${set.join(", ")}${set.length < names.length ? ` (sem: ${names.filter((n) => !set.includes(n)).join(", ")})` : ""}`);
+    const chain = resolveRoleChain(models, env)[role];
+    if (chain.active.length === 0) add("fail", `Modelo "${role}"`, `defina ao menos uma destas variáveis: ${chain.acceptedEnvs.join(", ")}`);
+    else add("ok", describeChain(chain));
   }
 
   // budget

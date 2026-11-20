@@ -118,7 +118,7 @@ describe("validação na carga (seção 4)", () => {
     });
     const env = cleanEnv(tmpDir(), { TELEGRAM_BOT_TOKEN: "123:SEGREDO-TOKEN" });
     const msg = buildErr(() => buildRuntime(dir, env, { withTelegram: true, logger: silentLogger, plugins: { sources: { "minha-fonte": fakeSource }, publishers: { fake: fakePublisher() } } }));
-    expect(msg).toMatch(/variável GROQ_API_KEY \(chave do modelo "triage"\) não está definida/);
+    expect(msg).toMatch(/papel "triage" sem chave: defina ao menos uma destas variáveis: GROQ_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY/);
     expect(msg).toMatch(/TELEGRAM_ALLOWED_CHAT_IDS/);
     expect(msg).not.toContain("SEGREDO-TOKEN");
   });

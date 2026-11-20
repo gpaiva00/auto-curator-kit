@@ -10,7 +10,7 @@ import {
   type Publisher,
   type Source,
 } from "@auto-curator/contracts";
-import { App, ConfigError, FilePromptProvider, LlmClient, Store, createLogger, loadProfile, loadVeto, type ProfileBundle, type VetoRules } from "@auto-curator/engine";
+import { App, ConfigError, FilePromptProvider, LlmClient, Store, createLogger, describeChain, loadProfile, loadVeto, resolveRoleChain, type ProfileBundle, type VetoRules } from "@auto-curator/engine";
 import { createDownloaderFromEnv, createPreparer } from "@auto-curator/media";
 import { createSource, orderForInput, type SourceEntry } from "@auto-curator/sources";
 import { TelegramApi, TelegramBot } from "@auto-curator/telegram";
@@ -83,6 +83,7 @@ export function buildRuntime(profileDir: string, env: NodeJS.ProcessEnv, opts: B
   // Antes de qualquer banco ou rede: fontes, publicadores, host e variáveis das partes ligadas.
   const parts = resolveParts(bundle, env, { plugins: opts.plugins, withTelegram: opts.withTelegram });
   for (const w of parts.issues.filter((i) => i.level === "warning")) logger.warn(w.text);
+  for (const chain of Object.values(resolveRoleChain(bundle.models, env))) logger.info(describeChain(chain));
   const errors = parts.issues.filter((i) => i.level === "error");
   if (errors.length) throw new ConfigError(`Configuração inválida:\n${errors.map((e) => `  - ${e.text}`).join("\n")}`);
 

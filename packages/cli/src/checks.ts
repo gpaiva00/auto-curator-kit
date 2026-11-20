@@ -1,7 +1,7 @@
 import { SourceConfig, errMsg, silentLogger, type MediaHost, type Publisher } from "@auto-curator/contracts";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type ProfileBundle } from "@auto-curator/engine";
+import { resolveRoleChain, type ProfileBundle } from "@auto-curator/engine";
 import { createBufferFromEnv, createMediaHostFromEnv } from "@auto-curator/publishers";
 import { createSource, sourceTable, type SourceEntry } from "@auto-curator/sources";
 import type { KitPlugins } from "./plugins.js";
@@ -102,13 +102,10 @@ export function resolveParts(bundle: ProfileBundle, env: NodeJS.ProcessEnv, opts
     }
   });
 
+  // cadeia de LLM por papel: a mesma regra do LlmClient (resolveRoleChain). Papel sem nenhuma chave é erro.
+  const chains = resolveRoleChain(models, env);
   for (const role of ["triage", "curator"] as const) {
-    const r = models.roles[role];
-    if (!has(env, r.apiKeyEnv)) issues.push({ level: "error", kind: "env-models", text: `models.json: variável ${r.apiKeyEnv} (chave do modelo "${role}") não está definida.` });
-    const fb = r.fallback === undefined ? [] : Array.isArray(r.fallback) ? r.fallback : [r.fallback];
-    for (const f of fb) {
-      if (!has(env, f.apiKeyEnv)) issues.push({ level: "warning", kind: "env-models", text: `models.json: variável ${f.apiKeyEnv} (fallback de "${role}") não está definida; esse fallback não vai funcionar.` });
-    }
+    if (chains[role].active.length === 0) issues.push({ level: "error", kind: "env-models", text: `models.json: papel "${role}" sem chave: defina ao menos uma destas variáveis: ${chains[role].acceptedEnvs.join(", ")}.` });
   }
 
   if (opts.withTelegram) {

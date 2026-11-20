@@ -12,8 +12,8 @@ describe("doctor --offline", () => {
     const t = io.text();
     expect(code).toBe(1);
     expect(t).toContain("✅ profile.json válido");
-    expect(t).toMatch(/❌ Chave de API para "triage"/);
-    expect(t).toMatch(/❌ Chave de API para "curator"/);
+    expect(t).toMatch(/❌ Modelo "triage"/);
+    expect(t).toMatch(/❌ Modelo "curator"/);
     expect(t).toMatch(/❌ Telegram: TELEGRAM_BOT_TOKEN/);
     expect(t).toMatch(/❌ Buffer: BUFFER_API_KEY/);
     expect(t).toContain("Prompts presentes");
@@ -26,7 +26,7 @@ describe("doctor --offline", () => {
     const env = cleanEnv(tmpDir(), { GROQ_API_KEY: "k", TELEGRAM_BOT_TOKEN: "t", TELEGRAM_ALLOWED_CHAT_ID: "42", BUFFER_API_KEY: "b", BUFFER_CHANNEL_INSTAGRAM: "c", IMGBB_API_KEY: "i" });
     const code = await run(["doctor", "--offline", "--profile", "astronomia"], { env: env, io: io, profilesRoot: REPO_PROFILES });
     const t = io.text();
-    expect(t).toContain('✅ Chave de API para "curator": GROQ_API_KEY');
+    expect(t).toMatch(/✅ curator: ativo groq\/openai\/gpt-oss-120b; pulados: deepseek \(DEEPSEEK_API_KEY ausente\), gemini \(GEMINI_API_KEY ausente\), openrouter \(OPENROUTER_API_KEY ausente\)/);
     expect(t).toContain("✅ Telegram: token definido");
     expect(t).toContain("✅ Telegram: 1 chat(s) autorizado(s)");
     expect(t).toContain("✅ Buffer: canal de instagram definido");

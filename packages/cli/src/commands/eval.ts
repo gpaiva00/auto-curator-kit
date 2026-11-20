@@ -1,13 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { errMsg, systemClock, type Draft, type Item, type Verdict } from "@auto-curator/contracts";
-import { ConfigError, curateOne, matchBlocked, type JobDeps } from "@auto-curator/engine";
+import { ConfigError, curateOne, matchBlocked, resolveRoleChain, type JobDeps } from "@auto-curator/engine";
 import type { CmdCtx } from "../io.js";
 import { EvalFile, checkCase, type EvalCase, type EvalItem } from "../evalMatch.js";
 import { brl } from "../format.js";
 import { resolveProfile } from "../profile.js";
 import { buildRuntime } from "../wire.js";
-import { roleKeyEnvs } from "./doctor.js";
 
 export function loadEvalFile(file: string): EvalCase[] {
   let raw: unknown;
@@ -86,9 +85,9 @@ export async function evalCommand(ctx: CmdCtx): Promise<number> {
       return 0;
     }
 
-    const keys = roleKeyEnvs(bundle.models.roles.curator);
-    if (!keys.some((k) => ctx.env[k]?.trim())) {
-      ctx.io.err(`❌ Sem chave de API para o Curador. Defina uma destas no .env do perfil: ${keys.join(", ")}.`);
+    const curatorChain = resolveRoleChain(bundle.models, ctx.env).curator;
+    if (curatorChain.active.length === 0) {
+      ctx.io.err(`❌ Sem chave de API para o Curador. Defina uma destas no .env do perfil: ${curatorChain.acceptedEnvs.join(", ")}.`);
       return 1;
     }
 
