@@ -1,6 +1,8 @@
 import {
   errMsg,
   PublishError,
+  charCount,
+  destinationMaxChars,
   type Destination,
   type MediaHost,
   type PreparedMedia,
@@ -13,8 +15,6 @@ import {
 const ENDPOINT = "https://api.buffer.com";
 const TIMEOUT_MS = 30_000;
 const DEFAULT_RETRY_AFTER_SEC = 900;
-/** Threads limita o post a 500 caracteres (regra do linkedin-curador, L1). */
-export const THREADS_MAX_CHARS = 500;
 
 const CREATE_POST = `
 mutation CreatePost($input: CreatePostInput!) {
@@ -70,8 +70,10 @@ export class BufferPublisher implements Publisher {
   async publish(req: PublishRequest): Promise<PublishResult> {
     const platform = req.destination.platform;
     const mode = req.destination.mode ?? "draft";
-    if (platform === "threads" && req.text.length > THREADS_MAX_CHARS) {
-      throw new PublishError(`Buffer: o Threads aceita até ${THREADS_MAX_CHARS} caracteres (o post tem ${req.text.length}). Encurte o texto ou tire o destino do Threads.`);
+    const max = destinationMaxChars(req.destination);
+    if (max !== undefined && charCount(req.text) > max) {
+      const name = platform.charAt(0).toUpperCase() + platform.slice(1);
+      throw new PublishError(`Buffer: ${name} aceita até ${max} caracteres (o post tem ${charCount(req.text)}). Encurte o texto ou tire o destino do ${name}.`);
     }
     const plan = this.planMedia(req);
     if (platform === "tiktok" && !plan.attach.some((m) => m.type === "video")) {

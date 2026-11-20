@@ -66,6 +66,8 @@ export const Destination = z.object({
   composeUrl: z.string().url().optional(),
   /** Only post items with this media kind here (e.g. tiktok only takes video). */
   only: z.enum(["any", "image", "video"]).default("any"),
+  /** Limite de caracteres do texto final deste destino (corpo + hashtags + crédito). Sem o campo: Threads por Buffer = 500 (padrão de compatibilidade). */
+  maxChars: z.number().int().positive().optional(),
 }).strict();
 export type Destination = z.infer<typeof Destination>;
 

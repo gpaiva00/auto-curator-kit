@@ -70,7 +70,9 @@ TemplateConfig
 TriageEntry
 Verdict
 canTransition
+charCount
 composeText
+destinationMaxChars
 errMsg
 normalizeHashtag
 silentLogger

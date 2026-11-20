@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { charCount, composeText } from "@auto-curator/contracts";
 import { agendaText, approvalText, finalText, helpText, outcomeText, platformName, queueText, skipNotice, statusText } from "../src/index.js";
-import { draft, item, ui } from "./helpers.js";
+import { dest, draft, item, ui } from "./helpers.js";
 
 describe("approvalText", () => {
   it("credit show, clean item, no media", () => {
@@ -112,5 +113,24 @@ describe("outcomeText: erro do publicador sem repetir \"Buffer:\"", () => {
     const out = outcomeText(item(), [{ platform: "threads", kind: "failed", error: "Buffer: o Threads aceita até 500 caracteres (o post tem 501)" }], "America/Sao_Paulo");
     expect(out).toContain("o Buffer falhou (o Threads aceita até 500 caracteres (o post tem 501))");
     expect(out).not.toMatch(/Buffer: o Threads/);
+  });
+});
+
+describe("cartão: contagem por destino com maxChars", () => {
+  it("mostra ✅ quando o texto cabe e ⚠️ com envio manual quando passa do limite", () => {
+    const i = item({ draft: draft({ body: "a".repeat(480), hashtags: [], sourceCredit: undefined }) });
+    const n = charCount(composeText(i.draft!, { credit: "hide" }));
+    const cabe = approvalText(i, ui({ credit: "hide", destinations: [dest("threads", { publisher: "buffer", maxChars: 500 })] }));
+    expect(cabe).toContain(`Threads: ${n}/500 ✅`);
+    expect(cabe).not.toContain("⚠️ vai para envio manual");
+
+    const passa = approvalText(i, ui({ credit: "hide", destinations: [dest("threads", { publisher: "buffer", maxChars: 400 })] }));
+    expect(passa).toContain(`Threads: ${n}/400 ⚠️ vai para envio manual a menos que você edite`);
+    expect(passa).not.toContain("✅");
+  });
+
+  it("sem maxChars e fora do Threads por Buffer, o cartão não mostra linha de contagem", () => {
+    const t = approvalText(item(), ui({ credit: "hide", destinations: [dest("linkedin", { publisher: "buffer" })] }));
+    expect(t).not.toMatch(/\/\d+ /);
   });
 });

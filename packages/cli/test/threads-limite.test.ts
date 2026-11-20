@@ -72,7 +72,7 @@ async function aprovar(bodyLen: number) {
 }
 
 describe("ponta a ponta: limite de 500 caracteres do Threads (Store real, Buffer falso, Telegram falso)", () => {
-  it("501 caracteres: LinkedIn recebe o rascunho completo; Threads falha isolado; Telegram entrega o texto para publicar à mão", async () => {
+  it("501 caracteres: LinkedIn recebe o rascunho completo; Threads vai para envio manual; Telegram entrega o texto para publicar à mão", async () => {
     const { rt, item, body, bufferNet, tg } = await aprovar(501);
     try {
       // LinkedIn: rascunho completo, no canal do LinkedIn
@@ -80,13 +80,11 @@ describe("ponta a ponta: limite de 500 caracteres do Threads (Store real, Buffer
       expect(linkedin).toHaveLength(1);
       expect(linkedin[0]!.text).toBe(body);
       expect(linkedin[0]!.saveToDraft).toBe(true);
-      // Threads: nenhuma chamada ao Buffer; a regra recusa antes
+      // Threads: nenhuma chamada ao Buffer; a regra do engine manda para envio manual antes
       expect(bufferNet.posts().filter((p) => p.channelId === "th1")).toHaveLength(0);
 
-      // Telegram: resultado por destino e texto para publicar à mão onde falhou
+      // Telegram: sem falha, só o texto para publicar à mão no Threads (a nota fica no registro)
       const out = tg.all();
-      expect(out).toMatch(/LinkedIn/);
-      expect(out).toMatch(/Threads aceita até 500 caracteres \(o post tem 501\)/);
       expect(out).toMatch(/Postar manualmente no Threads/);
       expect(out).toContain(body);
 
@@ -95,8 +93,8 @@ describe("ponta a ponta: limite de 500 caracteres do Threads (Store real, Buffer
       const li = rows.find((r) => r.platform === "linkedin");
       const th = rows.find((r) => r.platform === "threads");
       expect(li).toMatchObject({ publisher: "buffer", status: "scheduled", externalId: "post-1" });
-      expect(th).toMatchObject({ publisher: "buffer", status: "failed" });
-      expect(th?.error).toMatch(/500 caracteres/);
+      expect(th).toMatchObject({ publisher: "manual", status: "manual" });
+      expect(th?.error).toMatch(/passa do limite de 500/);
       expect(rt.store.get(item.id)!.status).toBe("approved");
     } finally {
       rt.close();

@@ -1,4 +1,4 @@
-import { composeText, type ApprovalUiConfig, type DestinationOutcome, type Item, type SettingView, type StatusSnapshot } from "@auto-curator/contracts";
+import { charCount, composeText, destinationMaxChars, type ApprovalUiConfig, type DestinationOutcome, type Item, type SettingView, type StatusSnapshot } from "@auto-curator/contracts";
 import { BOT_COMMANDS } from "./commands.js";
 import { S } from "./strings.js";
 
@@ -54,8 +54,14 @@ export function approvalText(item: Item, ui: ApprovalUiConfig): string {
   const credit = ui.credit === "show" ? d?.sourceCredit?.trim() : undefined;
   const source = [item.sourceUrl ? S.source(item.sourceUrl) : undefined, credit ? S.credit(credit) : undefined].filter(Boolean).join("  ·  ");
   const noHost = ui.noMediaHost?.length && item.media.length > 0 ? S.noMediaHost(ui.noMediaHost.map(platformName).join(", ")) : undefined;
-  const info = [head, stats, doubt ? S.doubt(doubt) : undefined, media, noHost, source || undefined].filter(Boolean).join("\n");
   const text = d ? composeText(d, { credit: ui.credit }) : trunc(item.text, 1000);
+  const limits = ui.destinations.flatMap((dest) => {
+    const max = destinationMaxChars(dest);
+    if (max === undefined) return [];
+    const n = charCount(text);
+    return [n <= max ? S.charsOk(platformName(dest.platform), n, max) : S.charsOver(platformName(dest.platform), n, max)];
+  });
+  const info = [head, stats, limits.length ? limits.join("\n") : undefined, doubt ? S.doubt(doubt) : undefined, media, noHost, source || undefined].filter(Boolean).join("\n");
   return block(info, `${S.separator}\n${text}`, d?.firstComment ? S.firstComment(d.firstComment) : undefined);
 }
 

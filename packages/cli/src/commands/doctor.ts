@@ -1,7 +1,7 @@
 import { accessSync, constants, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Destination } from "@auto-curator/contracts";
-import { errMsg, silentLogger } from "@auto-curator/contracts";
+import { destinationMaxChars, errMsg, silentLogger } from "@auto-curator/contracts";
 import { FilePromptProvider, Store, describeChain, loadProfile, resolveRoleChain, type ProfileBundle } from "@auto-curator/engine";
 import { createDownloaderFromEnv, ffmpegAvailable } from "@auto-curator/media";
 import { channelsFromEnv, createBufferFromEnv, createMediaHostFromEnv } from "@auto-curator/publishers";
@@ -144,6 +144,15 @@ export async function runChecks(profileDir: string, env: NodeJS.ProcessEnv, opts
       } catch (e) {
         add("fail", `Chrome dedicado em ${url}`, `${errMsg(e)}; abra o Chrome com --remote-debugging-port e entre na conta de leitura`);
       }
+  }
+
+  // Limite de caracteres: destino sem maxChars que recebe mídia ou é Threads por Buffer (padrão de compatibilidade)
+  for (const d of profile.destinations) {
+    if (d.maxChars !== undefined) continue;
+    const compat = destinationMaxChars(d);
+    const withMedia = d.only !== "any" || profile.media.strategy !== "none";
+    if (compat !== undefined) add("warn", `${d.platform} sem maxChars: usando ${compat}`, "defina maxChars no destino para fixar o limite");
+    else if (withMedia) add("warn", `${d.platform} sem maxChars: sem limite de texto conferido`, "defina maxChars no destino (texto que passa do limite vai para envio manual)");
   }
 
   // Publicação: com plugins.publishers, os ids vêm do projeto; sem, vale o Buffer pelo .env

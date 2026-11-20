@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Destination } from "./config.js";
 
 /** Models often write "#Celso Portiolli" or "celso"; fix the shape instead of failing the whole post. */
 export const normalizeHashtag = (v: unknown): unknown => (typeof v === "string" ? `#${v.replace(/\s+/g, "").replace(/^#+/, "")}` : v);
@@ -57,3 +58,12 @@ export function composeText(d: Pick<Draft, "body" | "hashtags" | "sourceCredit">
   if (credit) parts.push(credit);
   return parts.join("\n\n");
 }
+
+/** Limite de caracteres do destino. Sem `maxChars`, só o Threads por Buffer tem padrão (500, compatibilidade com perfis antigos). */
+export function destinationMaxChars(d: Pick<Destination, "platform" | "publisher" | "maxChars">): number | undefined {
+  if (d.maxChars !== undefined) return d.maxChars;
+  return d.platform === "threads" && d.publisher === "buffer" ? 500 : undefined;
+}
+
+/** Conta caracteres por ponto de código (emoji e acento contam 1; surrogate pair conta 1). */
+export const charCount = (text: string): number => [...text].length;

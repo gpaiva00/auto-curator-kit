@@ -1,6 +1,8 @@
 import {
   KitError,
+  charCount,
   composeText,
+  destinationMaxChars,
   errMsg,
   silentLogger,
   systemClock,
@@ -214,6 +216,13 @@ export class App implements BotActions {
       const media = mediaForDestination(item, dest);
       if (!media) continue; // destination does not take this kind of media
       attempted++;
+      const max = destinationMaxChars(dest);
+      if (dest.publisher !== "manual" && max !== undefined && charCount(text) > max) {
+        const note = `texto de ${charCount(text)} caracteres passa do limite de ${max}`;
+        this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });
+        outcomes.push({ platform: dest.platform, kind: "manual", error: note });
+        continue;
+      }
       if (dest.publisher !== "manual" && this.store.publicationsToday(dest.platform) >= dest.dailyCap) {
         const note = `limite diário de ${dest.dailyCap} atingido`;
         this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });

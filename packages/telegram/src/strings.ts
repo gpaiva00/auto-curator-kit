@@ -5,6 +5,8 @@ export const S = {
   headerNew: "🆕 Novo",
   confidence: (pct: number) => `📊 Confiança ${pct}%`,
   destinations: (names: string) => `🎯 ${names}`,
+  charsOk: (name: string, n: number, max: number) => `${name}: ${n}/${max} ✅`,
+  charsOver: (name: string, n: number, max: number) => `${name}: ${n}/${max} ⚠️ vai para envio manual a menos que você edite`,
   risks: (list: string) => `🛡 Riscos: ${list}`,
   noRisks: "nenhum",
   doubt: (t: string) => `❓ Dúvida: ${t}`,
