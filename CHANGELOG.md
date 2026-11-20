@@ -4,6 +4,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 
 ## [0.2.3] - 2026-11-20
 
+Asset `auto-curator-kit-0.2.3.tgz` · SHA-256 `205921370a8667c6e61e0800ab659d69034eaac659e25342ed1a9cef4baa2bb0`
+
 ### Corrigido
 
 - **Teto de gasto tenta o fallback que couber.** Antes, quando o principal estourava o teto de gasto mensal, a chamada falhava inteira, mesmo com um fallback mais barato dentro do teto. Agora cada provider da cadeia entra só se o custo estimado dele (entrada estimada pelo tamanho do texto, mais saída no pior caso com o `maxTokens` do próprio provider, com o preço dele) couber no teto restante. Se o principal não couber, o primeiro fallback que couber é usado, com log de troca sem valores. Se nenhum couber, `BudgetExceededError` é lançado sem nenhuma requisição, como antes.
@@ -11,8 +13,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 Não muda contrato: só fica mais permissivo. O erro de teto continua existindo, com o mesmo código, e só é lançado quando nenhum provider cabe.
 
 ## [0.2.2] - 2026-11-20
-
-Asset `auto-curator-kit-0.2.2.tgz` · SHA-256 `fb1d3d9663c6dc78849611efc2247bf280a7b89fa323b69449318f0a55cc6138`
 
 ### Corrigido
 
