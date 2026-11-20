@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { JsonRequest, RawItem } from "@auto-curator/contracts";
+import { BudgetExceededError } from "../src/index.js";
 import { FakeLlm, FakeSource, okDraft } from "../src/testing.js";
 import { setup } from "./helpers.js";
 
@@ -27,7 +28,8 @@ function dois(curator: unknown[]) {
 }
 
 describe("teto diário: a vaga volta no mesmo ciclo quando o item em voo termina em skip ou falha", () => {
-  it("skip: A é descartado e B é curado no mesmo tick", async () => {
+  // REGRESSÃO: este teste passa também sem a correção de falha, porque skip já liberava a vaga antes.
+  it("regressão (skip já liberava a vaga antes da correção): A é descartado e B é curado no mesmo tick", async () => {
     const t = dois([okDraft({ verdict: "skip", skipReason: "fora do tema" }), okDraft()]);
     await t.app.ingest();
     await t.app.tick();
@@ -38,7 +40,7 @@ describe("teto diário: a vaga volta no mesmo ciclo quando o item em voo termina
     expect(["curated", "ready", "pending_approval"]).toContain(byTitle("Assunto B")?.status);
   });
 
-  it("falha do curador em A: B é curado no mesmo tick", async () => {
+  it("falha comum do curador em A (prova da correção): B é curado no mesmo tick", async () => {
     const t = dois([new Error("curador indisponível"), okDraft()]);
     await t.app.ingest();
     await t.app.tick();
@@ -46,5 +48,17 @@ describe("teto diário: a vaga volta no mesmo ciclo quando o item em voo termina
     const byTitle = (s: string) => items.find((i) => i.title === s);
     expect(["curated", "ready", "pending_approval"]).toContain(byTitle("Assunto B")?.status);
     expect(t.store.get(byTitle("Assunto A")!.id)?.attempts).toBe(1);
+  });
+});
+
+describe("teto de orçamento: só ele interrompe a curadoria do tick", () => {
+  it("BudgetExceededError no A: o B NÃO é curado no ciclo (o teto de orçamento para o tick)", async () => {
+    const t = dois([new BudgetExceededError(1, 2, 3), okDraft()]);
+    await t.app.ingest();
+    await t.app.tick();
+    const items = t.store.list(["scored", "new", "skipped", "curated", "ready", "pending_approval"]);
+    const byTitle = (s: string) => items.find((i) => i.title === s);
+    expect(byTitle("Assunto B")?.status).toBe("scored");
+    expect(t.llm.calls.filter((c) => c.role === "curator")).toHaveLength(1);
   });
 });
