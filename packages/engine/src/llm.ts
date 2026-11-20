@@ -1,5 +1,5 @@
 import type { ZodType } from "zod";
-import { KitError, errMsg, silentLogger, type JsonRequest, type LlmPort, type LlmRole, type Logger, type ModelsConfig, type RoleConfig } from "@auto-curator/contracts";
+import { KitError, LLM_ROLES, errMsg, silentLogger, type JsonRequest, type LlmPort, type LlmRole, type Logger, type ModelsConfig, type RoleConfig } from "@auto-curator/contracts";
 import { sleep as realSleep } from "./util.js";
 
 export class BudgetExceededError extends KitError {
@@ -96,6 +96,72 @@ export function isFallbackable(e: unknown): boolean {
   return true; // network / timeout
 }
 
+// ------------------------------------------------------------ cadeia ativa por papel (regra única)
+
+export type ProviderCfg = Omit<RoleConfig, "fallback">;
+
+export interface ActiveProvider {
+  cfg: ProviderCfg;
+  envName: string;
+  /** Nome curto do provedor, pelo host do endpoint (ex.: "groq"). */
+  provider: string;
+}
+
+export interface RoleChain {
+  role: LlmRole;
+  /** Providers com chave definida, na ordem de tentativa. O primeiro é o que responde. */
+  active: ActiveProvider[];
+  /** Providers da cadeia sem chave: saem da cadeia ativa. */
+  skipped: ActiveProvider[];
+  /** Todas as variáveis aceitas para o papel, sem repetir. */
+  acceptedEnvs: string[];
+}
+
+const PROVIDER_HOSTS: [RegExp, string][] = [
+  [/groq/, "groq"],
+  [/openrouter/, "openrouter"],
+  [/deepseek/, "deepseek"],
+  [/googleapis|gemini/, "gemini"],
+  [/openai\.com/, "openai"],
+  [/anthropic/, "anthropic"],
+];
+
+export function providerLabel(baseUrl: string): string {
+  let host = baseUrl;
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    // mantém o texto como está
+  }
+  return PROVIDER_HOSTS.find(([re]) => re.test(host))?.[1] ?? host;
+}
+
+/**
+ * A ÚNICA regra da cadeia de LLM. Carga, doctor, start e LlmClient usam esta função.
+ * Para cada papel: principal + fallbacks, só os cuja variável de chave está definida, na ordem.
+ */
+export function resolveRoleChain(models: Pick<ModelsConfig, "roles">, env: NodeJS.ProcessEnv): Record<LlmRole, RoleChain> {
+  const out = {} as Record<LlmRole, RoleChain>;
+  for (const role of LLM_ROLES) {
+    const rc = models.roles[role];
+    const fb = rc.fallback === undefined ? [] : Array.isArray(rc.fallback) ? rc.fallback : [rc.fallback];
+    const all: ActiveProvider[] = [rc, ...fb].map((c) => ({ cfg: c, envName: c.apiKeyEnv, provider: providerLabel(c.baseUrl) }));
+    const has = (p: ActiveProvider): boolean => Boolean(env[p.envName]?.trim());
+    out[role] = { role, active: all.filter(has), skipped: all.filter((p) => !has(p)), acceptedEnvs: [...new Set(all.map((p) => p.envName))] };
+  }
+  return out;
+}
+
+/** Linha de log da cadeia, sem valores: "triage: ativo openrouter/<modelo>; pulados: groq (GROQ_API_KEY ausente)". */
+export function describeChain(c: RoleChain): string {
+  const first = c.active[0];
+  const parts = [`${c.role}: ${first ? `ativo ${first.provider}/${first.cfg.model}` : "nenhum provider com chave"}`];
+  const fallbacks = c.active.slice(1).map((p) => `${p.provider}/${p.cfg.model}`);
+  if (fallbacks.length) parts.push(`fallbacks ativos: ${fallbacks.join(", ")}`);
+  if (c.skipped.length) parts.push(`pulados: ${c.skipped.map((p) => `${p.provider} (${p.envName} ausente)`).join(", ")}`);
+  return parts.join("; ");
+}
+
 interface ChatResult {
   content: string;
   model: string;
@@ -165,8 +231,10 @@ export class LlmClient implements LlmPort {
 
   /** Primary model first; on 402/429/5xx/network failure (not budget, not bad output) the fallbacks answer, in order. */
   private async chat(role: LlmRole, messages: Msg[], label?: string): Promise<ChatResult> {
-    const rc = this.d.models.roles[role];
-    const chain: Omit<RoleConfig, "fallback">[] = [rc, ...(rc.fallback === undefined ? [] : Array.isArray(rc.fallback) ? rc.fallback : [rc.fallback])];
+    // só providers com chave; nunca se tenta um provider sem chave
+    const active = resolveRoleChain(this.d.models, this.env)[role];
+    if (!active.active.length) throw new MissingApiKeyError(role, active.acceptedEnvs.join(" ou "));
+    const chain = active.active.map((p) => p.cfg);
     let lastErr: unknown;
     for (const [i, m] of chain.entries()) {
       try {
