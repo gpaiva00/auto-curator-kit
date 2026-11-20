@@ -112,8 +112,11 @@ function main() {
 
   // 9. commit de registro e tag local
   git(["add", "CHANGELOG.md"]);
-  const msg = `chore(release): ${TAG}\n\nAsset ${tgzName}\nSHA-256 ${hash}\n\nCo-authored-by: OpenBot <335604065+openbotgit[bot]@users.noreply.github.com>`;
-  execFileSync("git", [...ensureIdentity(), "commit", "-q", "-m", msg], { cwd: ROOT, stdio: "inherit" });
+  // sem mudança no CHANGELOG (mesmo SHA de antes), não há o que commitar: a tag fica no HEAD que já traz o hash
+  if (git(["diff", "--cached", "--name-only"]) !== "") {
+    const msg = `chore(release): ${TAG}\n\nAsset ${tgzName}\nSHA-256 ${hash}\n\nCo-authored-by: OpenBot <335604065+openbotgit[bot]@users.noreply.github.com>`;
+    execFileSync("git", [...ensureIdentity(), "commit", "-q", "-m", msg], { cwd: ROOT, stdio: "inherit" });
+  }
   const commit = git(["rev-parse", "HEAD"]);
   execFileSync("git", [...ensureIdentity(), "tag", "-a", TAG, "-m", `auto-curator-kit ${TAG}`], { cwd: ROOT, stdio: "inherit" });
   writeFileSync(join(OUT, "release.json"), `${JSON.stringify({ version: VERSION, tag: TAG, commit, tgz: tgzName, sha256: hash, notes: notes }, null, 2)}\n`);
