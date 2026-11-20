@@ -15,6 +15,12 @@ Asset `auto-curator-kit-0.2.1.tgz` · SHA-256 `65e684d89162ae04492a0fe54123781ec
 
 - Dependência `sharp` em `^0.35.5`.
 
+### Conhecido
+
+- **Aviso de segurança alto no `zod` (2 avisos, GHSA-mrhx-c7xc-m3w5 e relacionados).** A correção publicada é a 4.6.6 ou posterior, que é uma major; este pacote continua em 3.25.x. Aceito pelo CTO e pelo dono: o `zod` valida só a configuração local do perfil, as respostas do LLM (limitadas por `maxTokens`) e os itens do scan local, sem entrada grande e não confiável vinda direto da internet. A migração para zod 4 está prevista para a 0.3.0 (K9).
+- **Aviso moderado no `satori` (sem correção publicada), aceito.** O SVG é rasterizado localmente e não é servido a navegador; o texto passa por `sanitizeText`.
+- **Regra para o futuro:** se o `zod` passar a validar entrada externa diretamente, essa entrada precisa de limite de tamanho antes do `safeParse`.
+
 ## [0.2.0] - 2026-11-18
 
 ### Quebra
