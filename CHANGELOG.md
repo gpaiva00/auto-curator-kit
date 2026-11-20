@@ -2,6 +2,17 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões seguem SemVer; antes da 1.0, minor pode quebrar e patch não.
 
+## [0.2.2] - 2026-11-20
+
+### Corrigido
+
+- **Chave de provider na cadeia de fallback.** Um papel (`triage`, `curator`) é válido quando pelo menos um provider da cadeia tem chave. Antes, a carga e o `start` exigiam a chave do principal, e o bot não subia com a chave só de um fallback. Providers sem chave saem da cadeia ativa na carga, e o `LlmClient` nunca tenta um deles. Papel sem nenhuma chave continua falhando, com a lista das variáveis aceitas.
+- **Uma regra só para a cadeia.** `resolveRoleChain` decide a cadeia ativa por papel, e o `doctor`, o `start`, o `eval` e o `LlmClient` usam essa mesma função.
+- **Log na carga, sem valores:** `triage: ativo openrouter/<modelo>; pulados: groq (GROQ_API_KEY ausente)`.
+- **Teto de gasto com o preço do modelo efetivamente chamado.** Coberto por teste: o gasto registrado no fallback usa o preço do fallback.
+
+Não muda contrato: fica mais permissivo, e nenhum perfil válido deixa de carregar.
+
 ## [0.2.1] - 2026-11-19
 
 Asset `auto-curator-kit-0.2.1.tgz` · SHA-256 `65e684d89162ae04492a0fe54123781ec7f195d313c32e838442a6fe21e27e3c`
