@@ -56,22 +56,31 @@ describe("chamada: o LlmClient nunca tenta um provider sem chave", () => {
   });
 });
 
-describe("teto de gasto: usa o preço do modelo efetivamente chamado", () => {
-  it("o fallback caro estoura o teto mesmo com o principal barato: BudgetExceededError, e o fallback nem é chamado", async () => {
+describe("teto de gasto: o kit tenta o fallback que couber", () => {
+  const cheap = { ...groq, inputUsdPerM: 0.001, outputUsdPerM: 0.001 };
+  const pricey = { ...openrouter, inputUsdPerM: 1_000_000, outputUsdPerM: 1_000_000 };
+
+  it("principal caro demais e fallback barato cabe: o fallback é chamado e o gasto registrado é o dele", async () => {
     const urls: string[] = [];
-    // principal barato: cabe no teto; fallback caro (openrouter): não cabe
-    const cheap = { ...groq, inputUsdPerM: 0.001, outputUsdPerM: 0.001 };
-    const pricey = { ...openrouter, inputUsdPerM: 1_000_000, outputUsdPerM: 1_000_000 };
-    const m = ModelsConfig.parse({ monthlyBudgetBRL: 1, roles: { triage: { ...cheap, fallback: pricey }, curator: { ...cheap } } });
-    const fetch: typeof globalThis.fetch = (async (url: string) => {
-      urls.push(url);
-      return url.startsWith("https://api.groq") ? new Response("erro", { status: 500 }) : ok('{"n":2}');
-    }) as typeof fetch;
-    const c = new LlmClient({ models: m, store: new Store(":memory:"), env: { GROQ_API_KEY: "g", OPENROUTER_API_KEY: "o" }, fetch, sleep: async () => {}, maxRetries: 0 });
+    const fetch: typeof globalThis.fetch = (async (url: string) => (urls.push(url), ok('{"n":2}'))) as typeof fetch;
+    const m = ModelsConfig.parse({ monthlyBudgetBRL: 1, roles: { triage: { ...pricey, fallback: cheap }, curator: { ...cheap } } });
+    const store = new Store(":memory:");
+    const c = new LlmClient({ models: m, store, env: { OPENROUTER_API_KEY: "o", GROQ_API_KEY: "g" }, fetch, sleep: async () => {}, maxRetries: 0 });
+    const r = await c.json({ role: "triage", system: "s", user: "u", schema });
+    expect(r.value).toEqual({ n: 2 });
+    expect(urls).toHaveLength(1);
+    expect(urls[0]).toMatch(/^https:\/\/api\.groq\.com/);
+    expect(store.monthSpendBRL()).toBeCloseTo(costBRL(cheap, m.usdBrl, 10, 5), 10);
+  });
+
+  it("nenhum provider cabe no teto: BudgetExceededError e nenhuma requisição", async () => {
+    const urls: string[] = [];
+    const fetch: typeof globalThis.fetch = (async (url: string) => (urls.push(url), ok('{"n":2}'))) as typeof fetch;
+    const m = ModelsConfig.parse({ monthlyBudgetBRL: 1, roles: { triage: { ...pricey, fallback: pricey }, curator: { ...cheap } } });
+    const c = new LlmClient({ models: m, store: new Store(":memory:"), env: { OPENROUTER_API_KEY: "o" }, fetch, sleep: async () => {}, maxRetries: 0 });
     const err = await c.json({ role: "triage", system: "s", user: "u", schema }).catch((e) => e);
     expect(err).toBeInstanceOf(BudgetExceededError);
-    expect(err.projectedBRL).toBeGreaterThan(1);
-    expect(urls.some((u) => u.startsWith("https://openrouter"))).toBe(false);
+    expect(urls).toHaveLength(0);
   });
 
   it("fallback respondendo: o gasto registrado usa o preço do fallback, não o do principal", async () => {
@@ -80,7 +89,6 @@ describe("teto de gasto: usa o preço do modelo efetivamente chamado", () => {
     const m = models(50);
     const c = new LlmClient({ models: m, store, env: { GROQ_API_KEY: "g", DEEPSEEK_API_KEY: "d" }, fetch, sleep: async () => {}, maxRetries: 0 });
     await c.json({ role: "triage", system: "s", user: "u", schema });
-    const expected = costBRL(deepseek, m.usdBrl, 10, 5);
-    expect(store.monthSpendBRL()).toBeCloseTo(expected, 10);
+    expect(store.monthSpendBRL()).toBeCloseTo(costBRL(deepseek, m.usdBrl, 10, 5), 10);
   });
 });

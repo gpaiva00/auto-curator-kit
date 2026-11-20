@@ -234,7 +234,8 @@ export class LlmClient implements LlmPort {
     // só providers com chave; nunca se tenta um provider sem chave
     const active = resolveRoleChain(this.d.models, this.env)[role];
     if (!active.active.length) throw new MissingApiKeyError(role, active.acceptedEnvs.join(" ou "));
-    const chain = active.active.map((p) => p.cfg);
+    // o teto decide quem entra: o principal se couber; senão, o primeiro fallback que couber
+    const chain = this.fittingChain(role, messages, active.active.map((p) => p.cfg));
     let lastErr: unknown;
     for (const [i, m] of chain.entries()) {
       try {
@@ -247,6 +248,28 @@ export class LlmClient implements LlmPort {
       }
     }
     throw lastErr;
+  }
+
+  /**
+   * Custo estimado de um provider = entrada estimada pelo tamanho do texto + saída no pior caso (maxTokens do provider),
+   * com o preço desse mesmo provider. Só entram providers que cabem no teto restante. Se nenhum couber, BudgetExceededError, sem rede.
+   */
+  private fittingChain(role: LlmRole, messages: Msg[], candidates: ProviderCfg[]): ProviderCfg[] {
+    const spent = this.d.store.monthSpendBRL();
+    const cap = this.d.models.monthlyBudgetBRL;
+    const inTok = estimateTokens(messages.map((m) => m.content).join("\n"));
+    const projected = (rc: ProviderCfg): number => costBRL(rc, this.d.models.usdBrl, inTok, rc.maxTokens);
+    const fits = (rc: ProviderCfg): boolean => !(spent >= cap || spent + projected(rc) > cap);
+    const fitting = candidates.filter(fits);
+    const primary = candidates[0]!;
+    if (fitting.length === 0) throw new BudgetExceededError(spent, cap, projected(primary));
+    if (!fits(primary)) {
+      // log de troca, sem valores de chave
+      const next = fitting[0]!;
+      this.log.warn(`${role}: principal ${providerLabel(primary.baseUrl)} excede o teto; usando ${providerLabel(next.baseUrl)}/${next.model}`);
+    }
+    for (const rc of candidates.slice(1)) if (!fits(rc)) this.log.debug(`LLM ${role}: ${providerLabel(rc.baseUrl)} excede o teto; fora desta chamada`);
+    return fitting;
   }
 
   private async chatWith(role: LlmRole, rc: Omit<RoleConfig, "fallback">, messages: Msg[], label?: string, hasNext = false): Promise<ChatResult> {
