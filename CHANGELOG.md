@@ -4,6 +4,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 
 ## [0.3.0] - 2026-11-20
 
+Asset `auto-curator-kit-0.3.0.tgz` · SHA-256 `f6e91165cfce53aa69bb26fd271d1d56277cc1134dc49bbc60f0bc0acc33c7c2`
+
 ### Adicionado
 
 - **`maxChars` por destino.** `Destination.maxChars` (inteiro positivo, opcional) é o limite do texto final de cada destino: corpo, hashtags e crédito. Sem o campo, só o Threads por Buffer tem padrão (500), por compatibilidade com perfis antigos.
@@ -17,8 +19,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versões s
 Compatibilidade: um perfil com `maxChars` não carrega no kit 0.2.3 (o schema de destino é estrito). Os outros perfis não mudam.
 
 ## [0.2.3] - 2026-11-20
-
-Asset `auto-curator-kit-0.2.3.tgz` · SHA-256 `205921370a8667c6e61e0800ab659d69034eaac659e25342ed1a9cef4baa2bb0`
 
 ### Corrigido
 
