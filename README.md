@@ -1,133 +1,139 @@
+**English** · [Português](README.pt-BR.md)
+
 # auto-curator-kit
 
-Motor reutilizável para rodar **perfis de redes sociais curados por IA**. Ele lê fontes (RSS, Google News, Google Trends, links que você envia), faz a triagem com um modelo barato e a curadoria com um modelo melhor, prepara a mídia e manda cada post para a sua aprovação no Telegram. Só depois do seu ✅ o post é agendado no Buffer ou entregue a você para publicar à mão.
+A reusable engine for running **AI-curated social media profiles**. It reads sources (RSS, Google News, Google Trends, links you send), triages with a cheap model and curates with a better one, prepares the media and sends each post to you for approval on Telegram. Only after your ✅ is the post scheduled on Buffer or handed to you to publish by hand.
 
-Um perfil é uma pasta de configuração (`profile.json`, `style-guide.md` e prompts opcionais), não código. Criar um perfil novo não exige editar o motor.
+Current version: **0.4.0** (no release published yet).
+
+A profile is a configuration folder (`profile.json`, `style-guide.md` and optional prompts), not code. Creating a new profile does not require editing the engine.
 
 ```text
- Fontes: RSS · Google News · Google Trends · /add · navegador (opcional)
+ Sources: RSS · Google News · Google Trends · /add · browser (optional)
    │
-   ▼  ingest (a cada 30 min) + pré-filtro sem IA (repetidos, antigos, padrões bloqueados)
- Triagem (LLM barato)                 nota 0–100; abaixo de triageMinScore vira skipped
-   │
-   ▼
- Curadoria (LLM melhor)               Draft: veredito, título, texto, hashtags, riskFlags
-   │                                  a policy do perfil aplica as regras no código
-   ▼
- Mídia (render | original | none)     estado ready
+   ▼  ingest (every 30 min) + pre-filter without AI (duplicates, old items, blocked patterns)
+ Triage (cheap LLM)                   score 0–100; below triageMinScore becomes skipped
    │
    ▼
- Aprovação no Telegram  ◄──────────── nada sai daqui sem o seu ✅
+ Curation (better LLM)                Draft: verdict, headline, body, hashtags, riskFlags
+   │                                  the profile's policy applies the rules in code
+   ▼                                  per-destination character limit (one retry)
+ Media (render | original | none)     ready state
    │
-   ├──► Buffer (rascunho, fila ou agora)
-   └──► manual (o bot manda o texto final e você publica, depois toca "Publiquei")
+   ▼
+ Approval on Telegram  ◄───────────── nothing leaves here without your ✅
+   │
+   ├──► Buffer (draft, queue or now)
+   └──► manual (the bot sends the final text and you publish it, then tap "Published")
 ```
 
-## Princípios
+## Principles
 
-- **Nada publica sem aprovação humana.** Todo item passa pelo Telegram. O bot só responde a chat ids listados em `TELEGRAM_ALLOWED_CHAT_IDS`.
-- **Um processo por perfil.** Cada perfil tem o seu bot, o seu banco SQLite, o seu teto de gasto com IA e o seu `.env`.
-- **Perfil é configuração, não código.** Fontes, destinos, limites e regras editoriais ficam no `profile.json`. Voz, público e assuntos ficam no `style-guide.md` e nos prompts.
+- **Nothing is published without human approval.** Every item goes through Telegram. The bot only answers chat ids listed in `TELEGRAM_ALLOWED_CHAT_IDS`.
+- **Text over the limit cannot be approved.** If the final text for a destination is over its character limit (e.g. Threads, 500), the draft becomes `needs_human`, with no ✅ Approve button. You can redo (🔁), edit or reject it.
+- **One process per profile.** Each profile has its own bot, SQLite database, AI spending cap and `.env`.
+- **A profile is configuration, not code.** Sources, destinations, limits and editorial rules live in `profile.json`. Voice, audience and topics live in `style-guide.md` and the prompts.
 
-## Requisitos
+## Requirements
 
-| Ferramenta | Obrigatória? | Para quê |
+| Tool | Required? | Used for |
 |---|---|---|
-| Node 22.5+ | sim | runtime (o banco usa `node:sqlite`) |
-| bun | sim | instalar dependências e rodar os scripts (`packageManager`: bun@1.3.13) |
-| ffmpeg | não | vídeo renderizado (estratégia `render` com vídeo) |
-| yt-dlp | não | baixar vídeo de terceiros (fontes com vídeo) |
-| Google Chrome | não | fontes de navegador (`x-feed`, `instagram-profile`); o script de apoio é para macOS |
+| Node 22.13.0+ (`^22.13.0 \|\| >=23.4.0`) | yes | runtime (the database uses `node:sqlite`) |
+| bun 1.3.13 | yes | installing dependencies and running scripts (`packageManager`: bun@1.3.13) |
+| ffmpeg | no | rendered video (`render` strategy with video) |
+| yt-dlp | no | downloading third-party video (video sources) |
+| Google Chrome | no | browser sources (`x-feed`, `instagram-profile`); the helper script is for macOS |
 
-## Início rápido
+## Quick start
 
 ```bash
 bun install
 
-# 1. cria profiles/<id>/ a partir de um template (news-card ou thought-leader)
-bun run create meu-perfil --template news-card --name "Meu Perfil"
+# 1. creates profiles/<id>/ from a template (news-card or thought-leader)
+bun run create my-profile --template news-card --name "My Profile"
 
-# 2. edite profiles/meu-perfil/profile.json (fontes e destinos) e preencha style-guide.md
+# 2. edit profiles/my-profile/profile.json (sources and destinations) and fill in style-guide.md
 
-# 3. segredos do perfil
-cp profiles/meu-perfil/.env.example profiles/meu-perfil/.env   # preencha token, chat ids e chaves de IA
+# 3. profile secrets
+cp profiles/my-profile/.env.example profiles/my-profile/.env   # fill in token, chat ids and AI keys
 
-# 4. confere tudo (❌ precisa ser corrigido; ⚠️ é aviso)
-bun run doctor --profile meu-perfil
+# 4. checks everything (❌ must be fixed; ⚠️ is a warning)
+bun run doctor --profile my-profile
 
-# 5. lê as fontes uma vez, sem IA, e mostra o que passa no pré-filtro
-bun run scan --profile meu-perfil
+# 5. reads the sources once, without AI, and shows what passes the pre-filter
+bun run scan --profile my-profile
 
-# 6. (opcional, gasta IA) roda os casos de regressão do Curador
-bun run eval --profile meu-perfil
+# 6. (optional, spends AI) runs the Curator's regression cases
+bun run eval --profile my-profile
 
-# 7. liga o bot e o agendador (fica rodando; Ctrl+C para parar)
-bun run start --profile meu-perfil
+# 7. starts the bot and the scheduler (keeps running; Ctrl+C to stop)
+bun run start --profile my-profile
 ```
 
-Para testar o pipeline inteiro sem rede e sem IA, rode `bun run dry-run` (com ou sem `--profile`).
+To test the whole pipeline without network and without AI, run `bun run dry-run` (with or without `--profile`).
 
-Detalhes de cada passo: [docs/PERFIL.md](docs/PERFIL.md). Para deixar rodando no Mac ou no Docker: [docs/DEPLOY.md](docs/DEPLOY.md).
+Details for each step: [docs/PERFIL.md](docs/PERFIL.md). To keep it running on a Mac or in Docker: [docs/DEPLOY.md](docs/DEPLOY.md).
 
-## Estrutura do repositório
+## Repository layout
 
-| Caminho | Conteúdo |
+| Path | Contents |
 |---|---|
-| `packages/contracts` | Tipos e schemas zod: `profile.json`, `models.json`, template, `Item` e estados, `Draft`, portas (interfaces). Sem dependências de runtime. |
-| `packages/engine` | Carga do perfil e do `.env`, banco SQLite com migrações, cliente LLM (fallback e teto mensal), prompts, policy (veto e regras editoriais), jobs do pipeline, agendador. |
-| `packages/telegram` | Bot por long polling, layout do cartão de aprovação, botões, comandos e textos em pt-BR. |
-| `packages/sources` | Registro de fontes (`registerSource`) e as fontes embutidas; leitor de navegador via CDP. |
-| `packages/media` | Preparadores de mídia (`none`, `original`, `render`), download com yt-dlp, renderização de cards e vídeo. |
-| `packages/publishers` | Publicação pelo Buffer (GraphQL) e hospedagem de mídia (R2 ou imgBB) para o Buffer. |
-| `packages/cli` | Comandos (`create`, `doctor`, `scan`, `dry-run`, `eval`, `start`, `status`), resolução de perfil e fiação da aplicação. |
-| `templates/` | Modelos de perfil: `news-card` e `thought-leader`. Trazem prompts, `models.json`, defaults e evals. |
-| `profiles/` | Perfis locais (exemplos e os seus). Os `.env` nunca são commitados. |
-| `deploy/` | LaunchAgent (`install-launchd.sh`, template do plist), `compose.yaml` e `Dockerfile`. |
-| `scripts/` | `chrome-reader.sh`: abre o Chrome dedicado de leitura. |
-| `docs/` | Documentação: perfil, fontes, arquitetura, deploy e o plano do projeto. |
+| `packages/contracts` | Types and zod schemas: `profile.json`, `models.json`, template, `Item` and states, `Draft`, ports (interfaces). No runtime dependencies. |
+| `packages/engine` | Loading of profile and `.env`, SQLite database with migrations, LLM client (fallback and monthly cap), prompts, policy (veto and editorial rules), pipeline jobs, scheduler. |
+| `packages/telegram` | Long-polling bot, approval card layout, buttons, commands and pt-BR texts. |
+| `packages/sources` | Source registry (`registerSource`) and the built-in sources; browser reader over CDP. |
+| `packages/media` | Media preparers (`none`, `original`, `render`), yt-dlp download, card and video rendering. |
+| `packages/publishers` | Publishing through Buffer (GraphQL), media hosting (R2 or imgBB) for Buffer, and the Buffer quota counter (see Limitations). |
+| `packages/cli` | Commands (`create`, `doctor`, `scan`, `dry-run`, `eval`, `start`, `status`), profile resolution and application wiring. |
+| `templates/` | Profile templates: `news-card` and `thought-leader`. They include prompts, `models.json`, defaults and evals. |
+| `profiles/` | Local profiles (examples and yours). `.env` files are never committed. |
+| `deploy/` | LaunchAgent (`install-launchd.sh`, plist template), `compose.yaml` and `Dockerfile`. |
+| `scripts/` | `chrome-reader.sh`: opens the dedicated reading Chrome. |
+| `docs/` | Documentation: profile, sources, architecture, deployment and the project plan. |
 
-## Comandos da CLI
+## CLI commands
 
-Os scripts da raiz chamam `packages/cli/src/main.ts`. O perfil vem de `--profile <id ou caminho>` ou da variável `CURADOR_PROFILE`.
+The root scripts call `packages/cli/src/main.ts`. The profile comes from `--profile <id or path>` or from the `CURADOR_PROFILE` variable.
 
-| Comando | O que faz | Opções |
+| Command | What it does | Options |
 |---|---|---|
-| `bun run create <id>` | Cria `profiles/<id>/` (profile.json, style-guide.md, .env.example, evals/) | `--template news-card` (padrão) ou `thought-leader`; `--name "Nome"` |
-| `bun run doctor` | Confere configuração, prompts, chaves de API, gasto do mês, bot do Telegram, fontes, Chrome, Buffer, ffmpeg, yt-dlp e pasta de dados. Sai com código 1 se houver ❌. | `--offline` (não faz chamadas de rede) |
-| `bun run scan` | Lê as fontes uma vez, sem IA, e mostra cada item e o motivo de ser filtrado. Sem `--dry`, grava os novos itens no banco. | `--dry` (só mostra) |
-| `bun run dry-run` | Roda ingestão, triagem, curadoria, mídia, cartão de aprovação e aprovar/rejeitar com dados falsos, em pasta temporária. Sem `--profile`, usa um perfil sintético. | — |
-| `bun run eval` | Roda os casos de `templates/<template>/evals/cases.json` e `profiles/<id>/evals/cases.json` no modelo real. Gasta IA. | `--case <nome>` (filtra por nome) |
-| `bun run start` | Liga o bot do Telegram e o agendador (ingestão e pipeline). Trava de instância única por perfil. | — |
-| `bun run status --profile <id>` | Mostra contagens por estado, gasto do mês, limites e as últimas execuções. | — |
+| `bun run create <id>` | Creates `profiles/<id>/` (profile.json, style-guide.md, .env.example, evals/) | `--template news-card` (default) or `thought-leader`; `--name "Name"` |
+| `bun run doctor` | Checks configuration, prompts, API keys, monthly spend, the Telegram bot, sources, Chrome, Buffer, ffmpeg, yt-dlp and the data folder. Exits with code 1 if there is a ❌. | `--offline` (makes no network calls) |
+| `bun run scan` | Reads the sources once, without AI, and shows each item and why it was filtered. Without `--dry`, it stores the new items in the database. | `--dry` (display only) |
+| `bun run dry-run` | Runs ingestion, triage, curation, media, the approval card and approve/reject with fake data, in a temporary folder. Without `--profile`, uses a synthetic profile. | — |
+| `bun run eval` | Runs the cases in `templates/<template>/evals/cases.json` and `profiles/<id>/evals/cases.json` against the real model. Spends AI. | `--case <name>` (filter by name) |
+| `bun run start` | Starts the Telegram bot and the scheduler (ingestion and pipeline). Single-instance lock per profile. | — |
+| `bun run status --profile <id>` | Shows counts per state, monthly spend, limits and the latest runs. | — |
 
-Todos aceitam `--profile` (ou `-p`) e `--help` (ou `-h`). Opções desconhecidas são erro.
+All of them accept `--profile` (or `-p`) and `--help` (or `-h`). Unknown options are an error.
 
-## Comandos do bot no Telegram
+## Telegram bot commands
 
-Os comandos são em português. Os aliases em inglês também funcionam. Mensagens de chats fora de `TELEGRAM_ALLOWED_CHAT_IDS` são ignoradas e não recebem resposta. Se `TELEGRAM_ALLOWED_USER_IDS` estiver definido, o remetente também precisa estar nessa lista.
+Commands are in Portuguese. The English aliases also work. Messages from chats outside `TELEGRAM_ALLOWED_CHAT_IDS` are ignored and get no reply. If `TELEGRAM_ALLOWED_USER_IDS` is set, the sender must also be on that list.
 
-| Comando | Alias | O que faz |
+| Command | Alias | What it does |
 |---|---|---|
-| `/add <link ou texto>` | — | Cria um item agora. Colar só o link também funciona. |
-| `/ler` | `/scan` | Roda as fontes agora. |
-| `/pendentes` | `/pending` | Lista o que espera a sua aprovação. |
-| `/fila` | `/queue` | Tudo em andamento, agrupado por estado. |
-| `/agenda` | `/schedule` | O que está agendado no Buffer. |
-| `/furar <id>` | `/bump` | Põe o item na frente da fila. |
-| `/desfurar <id>` | `/unbump` | Tira a prioridade do item. |
-| `/status` | — | Contagens, gasto de IA, limite diário e motivo de espera, se houver. |
-| `/pausar` | `/pause` | Pausa a ingestão e o pipeline agendados. `/ler` e `/add` continuam funcionando. |
-| `/retomar` | `/resume` | Retoma a geração. |
-| `/config` | `/configs` | Mostra as configurações que podem ser mudadas pelo Telegram, com os valores atuais. |
-| `/definir <chave> <valor>` | `/set` | Muda uma configuração do perfil (ex.: `/definir aprovacoes_dia 5`). Vale após reiniciar o app. Segredos (`.env`) não são alteráveis pelo chat. |
-| `/cancelar` | `/cancel` | Cancela a edição em andamento. |
-| `/ajuda` | `/help`, `/start` | Lista os comandos. |
+| `/add <link or text>` | — | Creates an item now. Sending only the link also works. |
+| `/ler` | `/scan` | Runs the sources now. |
+| `/pendentes` | `/pending` | Lists what is waiting for your approval. |
+| `/fila` | `/queue` | Everything in progress, grouped by state. |
+| `/agenda` | `/schedule` | What is scheduled on Buffer. |
+| `/refazer <id> <instruction>` | — | Redoes the text of a pending item, or of an approved item that has nothing in the send queue yet. Refuses items already queued and items already published. |
+| `/furar <id>` | `/bump` | Puts the item at the front of the queue. |
+| `/desfurar <id>` | `/unbump` | Removes the item's priority. |
+| `/status` | — | Counts, AI spend, daily limit and the waiting reason, if any. |
+| `/pausar` | `/pause` | Pauses scheduled ingestion and pipeline. `/ler` and `/add` keep working. |
+| `/retomar` | `/resume` | Resumes generation. |
+| `/config` | `/configs` | Shows the settings that can be changed from Telegram, with their current values. |
+| `/definir <key> <value>` | `/set` | Changes a profile setting (e.g. `/definir aprovacoes_dia 5`). Takes effect after restarting the app. Secrets (`.env`) cannot be changed from chat. |
+| `/cancelar` | `/cancel` | Cancels the edit in progress. |
+| `/ajuda` | `/help`, `/start` | Lists the commands. |
 
-Durante um 🔁 Refazer, a resposta `/igual` tenta de novo sem instrução.
+During a 🔁 Redo, the reply `/igual` tries again without an instruction.
 
-### Cartão de aprovação
+### Approval card
 
-Cada post chega antes de qualquer publicação, com a mídia preparada e os botões abaixo. Este é um exemplo ilustrativo do formato:
+Each post arrives before anything is published, with the prepared media and the buttons below. This is an illustrative example of the format:
 
 ```text
 ⚠️ Revisar · i_9c1e4b7a2f10 · Telescópio detecta atmosfera em planeta do tamanho da Terra
@@ -135,44 +141,53 @@ Cada post chega antes de qualquer publicação, com a mídia preparada e os bot�
 ❓ Dúvida: só uma fonte confirmou; checar o comunicado original.
 🔗 Fonte: https://www.example.com/noticia  ·  ✍️ Crédito: Fonte: Portal Exemplo
 ─────────
-<texto final, exatamente como será publicado>
+<final text, exactly as it will be published>
 
 [✅ Aprovar]        [❌ Rejeitar]
 [✏️ Editar texto]   [🏷 Editar título]
 [🔁 Refazer]
 ```
 
-- ⚠️ **Revisar** aparece quando o veredito é `needs_human` ou há flags de risco. 🆕 **Novo** aparece nos demais casos.
-- **Rejeitar** pede um motivo (lista do perfil, em `telegram.rejectReasons`) e grava no banco.
-- **Refazer** pede uma instrução ao Curador, ou `/igual` para tentar de novo.
-- Em destinos manuais, a aprovação manda a mídia final e o texto para copiar, com os botões **Abrir** (se houver `composeUrl`) e **Publiquei**.
+- ⚠️ **Revisar** (review) appears when the verdict is `needs_human` or there are risk flags. 🆕 **Novo** (new) appears in the other cases.
+- **`needs_human` card** (text over the limit of some destination): has no ✅ Approve button. It shows the warning with the count (e.g. `threads: 512/500 caracteres, acima do limite`) and the reject, edit and 🔁 Redo buttons.
+- **Reject** asks for a reason (the profile's list, in `telegram.rejectReasons`) and records it in the database.
+- **Redo** asks the Curator for an instruction, or `/igual` to try again.
+- For manual destinations, approval sends the final media and the text to copy, with the **Abrir** (Open, if there is a `composeUrl`) and **Publiquei** (Published) buttons.
 
-## Documentação
+## Per-destination limits and daily cap
 
-- [docs/PERFIL.md](docs/PERFIL.md): criar e ajustar um perfil, referência do `profile.json`, prompts, veto, evals e variáveis de ambiente.
-- [docs/FONTES.md](docs/FONTES.md): cada tipo de fonte, opções, chave de deduplicação e exemplos; como escrever e registrar uma fonte nova.
-- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): pacotes, máquina de estados do item, portas, tabelas do banco e cliente LLM.
-- [docs/DEPLOY.md](docs/DEPLOY.md): LaunchAgent por perfil, Docker Compose, Chrome dedicado e vários perfis no mesmo Mac.
-- [docs/PLANO.md](docs/PLANO.md): diagnóstico, decisões e fases da migração.
+- **Character limit (`maxChars`).** Each destination can have a limit for the final text (body, hashtags and credit). Without the field, Threads through Buffer uses 500 for compatibility. When the text is over the limit, the Curator receives the number and tries once; if it is still over, the draft becomes `needs_human` (see the card above). The text is never cut in the middle.
+- **Daily cap (`dailyCap`).** When a destination has already reached its daily maximum, the item is deferred to the first slot with room, respecting the window (`window`) and the minimum interval (`minIntervalMinutes`). Deferral goes up to `maxDeferDays` days (default 7). If there is no room within that period, the item goes to manual sending, with a note in the record.
 
-## Desenvolvimento
+## Documentation
+
+- [docs/PERFIL.md](docs/PERFIL.md): creating and adjusting a profile, `profile.json` reference, prompts, veto, evals and environment variables.
+- [docs/FONTES.md](docs/FONTES.md): each source type, options, deduplication key and examples; how to write and register a new source.
+- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): packages, item state machine, ports, database tables and the LLM client.
+- [docs/DEPLOY.md](docs/DEPLOY.md): LaunchAgent per profile, Docker Compose, dedicated Chrome and several profiles on the same Mac.
+- [docs/PLANO.md](docs/PLANO.md): diagnosis, decisions and phases of the migration.
+
+## Development
 
 ```bash
 bun run test        # vitest (packages/*/test)
 bun run typecheck   # tsc --noEmit
 ```
 
-## Limitações conhecidas
+Continuous integration runs typecheck and tests on Node 22.13.0 and Node 26 (see `.github/workflows/ci.yml`). To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md). To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
-- **Fontes de navegador (X e Instagram) violam os Termos de Uso dessas redes.** Use uma conta secundária de leitura, mantenha o volume baixo (os limites das fontes existem para isso) e trate-as como opcionais. Elas exigem um Chrome dedicado aberto e logado.
-- **Publicação automática só existe via Buffer.** Não há integração direta com LinkedIn, Instagram ou TikTok. Para essas redes, use o Buffer ou o modo `manual`.
-- **Um canal do Buffer por plataforma.** Defina `BUFFER_CHANNEL_<PLATAFORMA>` ou `channelEnv` no destino. Sem a variável, o canal só é descoberto se houver exatamente um conectado na conta.
-- **Mídia para o Buffer precisa de hospedagem pública.** Configure `IMGBB_API_KEY` ou as variáveis `R2_*`. Sem isso, o Buffer recebe só o texto e o destino perde a mídia.
-- **Vídeo de terceiros depende do yt-dlp.** Sem ele, só imagens são usadas.
-- **Docker não atende fontes de navegador.** `BROWSER_CDP_URL` só aceita `127.0.0.1` (o Chrome tem de estar na mesma máquina e namespace de rede). Para esses perfis, use o LaunchAgent.
-- **Autorização do bot é por chat.** Use um chat privado; em grupo, defina `TELEGRAM_ALLOWED_USER_IDS`.
-- **Os intervalos `publish` e `metrics` não são agendados.** Só `ingest` e `pipeline` rodam como jobs.
+## Known limitations
 
-## Licença
+- **Browser sources (X and Instagram) violate those networks' Terms of Use.** Use a secondary reading account, keep the volume low (the sources' limits exist for that reason) and treat them as optional. They require a dedicated Chrome that is open and logged in.
+- **Automatic publishing exists only through Buffer.** There is no direct integration with LinkedIn, Instagram or TikTok. For those networks, use Buffer or the `manual` mode.
+- **Buffer quota not yet wired to the publisher.** The `publishers` package already has the shared per-organization quota counter and the full-queue check (limit of scheduled posts per channel, on the Free plan), but the publisher does not use those checks yet. Until they are wired, the only cap is the destination's `dailyCap`.
+- **One Buffer channel per platform.** Set `BUFFER_CHANNEL_<PLATFORM>` or `channelEnv` on the destination. Without the variable, the channel is only discovered if exactly one is connected to the account.
+- **Buffer media needs public hosting.** Configure `IMGBB_API_KEY` or the `R2_*` variables. Without them, Buffer receives only the text and the destination loses its media.
+- **Third-party video depends on yt-dlp.** Without it, only images are used.
+- **Docker does not serve browser sources.** `BROWSER_CDP_URL` only accepts `127.0.0.1` (Chrome must be on the same machine and network namespace). For those profiles, use the LaunchAgent.
+- **Bot authorization is per chat.** Use a private chat; in a group, set `TELEGRAM_ALLOWED_USER_IDS`.
+- **The `publish` and `metrics` intervals are not scheduled.** Only `ingest` and `pipeline` run as jobs.
 
-A definir.
+## License
+
+To be decided. This repository does not yet have a license file: use, copying and redistribution are not authorized until a license is published.
