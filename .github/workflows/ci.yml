@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: typecheck and tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["22.13.0", "26"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.13"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Dependencies come from bun.lock. The checks run under Node (not bun) so the
+      # matrix really tests the Node runtime: the database uses node:sqlite.
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit
+
+      - name: Tests
+        run: node node_modules/vitest/vitest.mjs run
