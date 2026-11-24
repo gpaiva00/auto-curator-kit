@@ -4,6 +4,9 @@ import { z } from "zod";
 import {
   Draft,
   RawItem,
+  charCount,
+  composeText,
+  destinationMaxChars,
   TriageEntry,
   errMsg,
   type Clock,
@@ -234,15 +237,45 @@ export function curatorInput(d: Pick<JobDeps, "bundle">, item: Item, feedback?: 
       extra: item.extra,
     },
     profile: { name: d.bundle.profile.name, language: d.bundle.profile.language },
+    // limite do texto final por destino: o curador já escreve dentro dele
+    limits: d.bundle.profile.destinations.flatMap((dst) => { const max = destinationMaxChars(dst); return dst.publisher === "manual" || max === undefined ? [] : [{ platform: dst.platform, maxChars: max }]; }),
     ...(feedback ? { feedback } : {}),
   });
 }
 
-/** One curator call + editorial policy. Does not touch the item. */
+/** Destinos com limite de caracteres (publicador não manual) cujo texto final passa do limite. */
+export function overLimits(d: Pick<JobDeps, "bundle">, draft: Draft): { platform: string; len: number; max: number }[] {
+  const profile = d.bundle.profile;
+  const out: { platform: string; len: number; max: number }[] = [];
+  for (const dest of profile.destinations) {
+    const max = destinationMaxChars(dest);
+    if (dest.publisher === "manual" || max === undefined) continue;
+    const len = charCount(composeText(draft, { credit: profile.editorial.credit }));
+    if (len > max) out.push({ platform: dest.platform, len, max });
+  }
+  return out;
+}
+
+/** One curator call + editorial policy + limite por destino (uma nova tentativa). Does not touch the item. */
 export async function curateOne(d: JobDeps, item: Item, feedback?: string): Promise<Draft> {
   const prompt = d.prompts.get("curator");
-  const { value } = await d.llm.json({ role: "curator", system: prompt.text, user: curatorInput(d, item, feedback), schema: Draft, label: `curator:${item.id}` });
-  const { draft, notes } = enforceEditorial({ ...value, promptVersion: prompt.version }, item, d.bundle.profile, d.bundle.template, { veto: d.veto });
+  const ask = async (fb?: string) => {
+    const { value } = await d.llm.json({ role: "curator", system: prompt.text, user: curatorInput(d, item, fb), schema: Draft, label: `curator:${item.id}` });
+    return enforceEditorial({ ...value, promptVersion: prompt.version }, item, d.bundle.profile, d.bundle.template, { veto: d.veto });
+  };
+  let { draft, notes } = await ask(feedback);
+  let over = overLimits(d, draft);
+  if (over.length) {
+    // Uma nova tentativa, citando o número. Não corta o texto no meio.
+    const fix = over.map((o) => `o texto de ${o.platform} tem ${o.len} caracteres e o máximo é ${o.max}; encurte o corpo para caber, sem cortar no meio.`).join(" ");
+    ({ draft, notes } = await ask([feedback, fix].filter(Boolean).join(" ")));
+    over = overLimits(d, draft);
+  }
+  if (over.length) {
+    // Ainda passa: não vai para aprovação como está; a contagem fica visível na nota.
+    draft = { ...draft, verdict: "needs_human" };
+    notes = [...notes, ...over.map((o) => `${o.platform}: ${o.len}/${o.max} caracteres, acima do limite`)];
+  }
   return withNotes(draft, notes);
 }
 
