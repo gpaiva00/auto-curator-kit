@@ -28,9 +28,10 @@ import {
 import type { ProfileBundle } from "./config.js";
 import * as jobs from "./jobs.js";
 import { loadVeto, queueGate, type VetoRules } from "./policy.js";
-import { nextSlot } from "./slots.js";
+import { addDay, localInstant, nextSlot } from "./slots.js";
 import { saveProfileSetting, settingViews } from "./settings.js";
 import type { Store } from "./store.js";
+import { dayKey } from "./util.js";
 
 export interface AppDeps {
   bundle: ProfileBundle;
@@ -58,6 +59,7 @@ export interface TickResult {
 }
 
 const PAUSE_KEY = "paused";
+const DEFAULT_MAX_DEFER_DAYS = 7;
 
 /** Media shown/published on a destination, or undefined when the destination does not apply to this item. */
 export function mediaForDestination(item: Item, dest: Destination): PreparedMedia[] | undefined {
@@ -201,6 +203,20 @@ export class App implements BotActions {
     this.store.transition(id, "rejected", `rejeitado: ${reasonCode}`);
   }
 
+  /** Primeiro horário com vaga no teto diário do destino (janela e intervalo respeitados); undefined sem vaga em maxDeferDays. */
+  private findSlot(dest: Destination, now: Date): Date | undefined {
+    const tz = this.bundle.profile.timezone;
+    const days = dest.maxDeferDays ?? DEFAULT_MAX_DEFER_DAYS;
+    let slot = nextSlot(now, dest, this.store.lastSlotAt(dest.platform), tz);
+    for (let i = 0; i <= days; i++) {
+      const day = dayKey(slot, tz);
+      if (this.store.publicationsOnDay(dest.platform, day) < dest.dailyCap) return slot;
+      // Dia cheio: recomeça no horário de abertura do destino (janela ou 09:00) do dia seguinte.
+      slot = nextSlot(localInstant(addDay(day), dest.window?.start ?? "09:00", tz), dest, this.store.lastSlotAt(dest.platform), tz);
+    }
+    return undefined;
+  }
+
   async approve(id: string): Promise<DestinationOutcome[]> {
     const item = this.mustGet(id, "pending_approval");
     if (!item.draft) throw new KitError(`Item ${id} sem rascunho`, "NO_DRAFT");
@@ -223,17 +239,17 @@ export class App implements BotActions {
         outcomes.push({ platform: dest.platform, kind: "manual", error: note });
         continue;
       }
-      if (dest.publisher !== "manual" && this.store.publicationsToday(dest.platform) >= dest.dailyCap) {
-        const note = `limite diário de ${dest.dailyCap} atingido`;
-        this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });
-        outcomes.push({ platform: dest.platform, kind: "manual", error: note });
-        continue;
-      }
       if (dest.publisher !== "manual") {
         const pub = this.d.publishers[dest.publisher];
         const now = this.clock.now();
-        // No interval and no window: slot is `now`, so the post goes out as before.
-        const slot = nextSlot(now, dest, this.store.lastSlotAt(dest.platform), this.bundle.profile.timezone);
+        // Teto diário, janela e intervalo juntos: o primeiro horário com vaga; sem vaga em maxDeferDays, vai para manual.
+        const slot = this.findSlot(dest, now);
+        if (!slot) {
+          const note = `sem vaga nos próximos ${dest.maxDeferDays ?? DEFAULT_MAX_DEFER_DAYS} dias (teto diário de ${dest.dailyCap})`;
+          this.store.addPublication({ itemId: id, platform: dest.platform, publisher: "manual", status: "manual", error: note });
+          outcomes.push({ platform: dest.platform, kind: "manual", error: note });
+          continue;
+        }
         if (slot.getTime() > now.getTime()) {
           // Channel interval or window says "not yet": keep it locally until releaseDue() sends it.
           this.store.addPublication({ itemId: id, platform: dest.platform, publisher: dest.publisher, status: "queued", mode: dest.mode, scheduledAt: slot.toISOString() });

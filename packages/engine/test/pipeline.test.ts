@@ -215,17 +215,17 @@ describe("approve: media selection, no-destination and daily cap", () => {
     expect(t.store.get(a.id)!.status).toBe("published");
   });
 
-  it("dailyCap: over the cap the Buffer destination falls back to manual", async () => {
+  it("dailyCap: over the cap the Buffer destination defers to the next day", async () => {
     const t = setup({ profile: { destinations: [{ platform: "instagram", publisher: "buffer", dailyCap: 1 }] } as never });
     const a = (await t.app.addManual("primeiro texto do dia para o buffer"))!.item!;
     const b = (await t.app.addManual("segundo texto do dia para o buffer"))!.item!;
     await t.app.runPipeline();
     expect((await t.app.approve(a.id))[0]!.kind).toBe("buffer");
     const out = await t.app.approve(b.id);
-    expect(out[0]).toMatchObject({ kind: "manual" });
-    expect(out[0]!.error).toBe("limite diário de 1 atingido");
+    // fixedClock 2026-11-14 12:00 em São Paulo: o próximo dia abre às 09:00 locais
+    expect(out[0]).toMatchObject({ kind: "queued", scheduledAt: "2026-11-15T12:00:00.000Z" });
     expect(t.buffer.requests).toHaveLength(1);
-    expect(t.store.get(b.id)!.status).toBe("approved");
+    expect(t.store.get(b.id)!.status).toBe("published");
   });
 
   it("addManual surfaces the source error instead of the generic message", async () => {

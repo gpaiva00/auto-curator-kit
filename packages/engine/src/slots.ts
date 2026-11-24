@@ -39,3 +39,15 @@ export function nextSlot(now: Date, dest: Pick<Destination, "minIntervalMinutes"
   }
   throw new Error(`janela de horário nunca abre nos próximos ${MAX_SEARCH_DAYS} dias`);
 }
+
+/** Instante em que o relógio de `tz` marca `hhmm` no dia `day` (YYYY-MM-DD). */
+export function localInstant(day: string, hhmm: string, tz: string): Date {
+  const wall = Date.parse(`${day}T${hhmm}:00Z`);
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const p = Object.fromEntries(f.formatToParts(new Date(wall)).map((x) => [x.type, Number(x.value)]));
+  const asUtc = Date.UTC(p.year!, p.month! - 1, p.day!, p.hour! % 24, p.minute!);
+  return new Date(wall - (asUtc - wall));
+}
+
+/** Dia seguinte a `day` (YYYY-MM-DD), em aritmética de calendário. */
+export const addDay = (day: string): string => new Date(Date.parse(`${day}T12:00:00Z`) + 24 * 60 * 60_000).toISOString().slice(0, 10);

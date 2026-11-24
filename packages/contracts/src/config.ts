@@ -68,6 +68,8 @@ export const Destination = z.object({
   only: z.enum(["any", "image", "video"]).default("any"),
   /** Limite de caracteres do texto final deste destino (corpo + hashtags + crédito). Sem o campo: Threads por Buffer = 500 (padrão de compatibilidade). */
   maxChars: z.number().int().positive().optional(),
+  /** Dias à frente em que um item adiado por teto diário ainda procura vaga; sem vaga, vai para envio manual. Padrão 7. */
+  maxDeferDays: z.number().int().nonnegative().optional(),
   /** Buffer only: teto de chamadas por dia deste canal no contador compartilhado da organização. Sem o campo: 24. */
   bufferDailyCalls: z.number().int().positive().optional(),
 }).strict();

@@ -423,6 +423,11 @@ export class Store implements StorePort {
     const rows = this.db.prepare("SELECT created_at FROM publications WHERE platform = ? AND status != 'failed' AND error IS NULL").all(platform) as { created_at: string }[];
     return rows.filter((r) => dayKey(new Date(r.created_at), this.timezone) === today).length;
   }
+  /** Publications of a platform that go out on `day` (YYYY-MM-DD, profile timezone): queued ones by scheduled_at, the rest by created_at. Failed and errored rows do not count. */
+  publicationsOnDay(platform: string, day: string): number {
+    const rows = this.db.prepare("SELECT status, created_at, scheduled_at FROM publications WHERE platform = ? AND status != 'failed' AND error IS NULL").all(platform) as { status: string; created_at: string; scheduled_at: string | null }[];
+    return rows.filter((r) => dayKey(new Date(r.status === "queued" && r.scheduled_at ? r.scheduled_at : r.created_at), this.timezone) === day).length;
+  }
   listPublications(opts: { status?: Publication["status"][]; limit?: number } = {}): Publication[] {
     const sts = opts.status ?? [];
     const where = sts.length ? `WHERE status IN (${placeholders(sts.length)})` : "";
