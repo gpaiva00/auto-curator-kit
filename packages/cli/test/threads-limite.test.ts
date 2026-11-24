@@ -55,11 +55,14 @@ function fakeTelegramNetwork() {
 /** Pipeline até o cartão no Telegram, depois o clique em "aprovar" no bot. */
 async function aprovar(bodyLen: number) {
   const dir = profileDir();
-  const body = "a".repeat(bodyLen);
+  // composeText = corpo + "\n\n" + hashtags: o corpo desconta esse sufixo, para o texto final ter bodyLen caracteres.
+  // Com 3 hashtags e categoryTag, o rascunho fica publicável (sem flags de revisão do template).
+  const hashtags = ["#a", "#b", "#c"];
+  const body = "a".repeat(bodyLen - 2 - hashtags.join(" ").length);
   const bufferNet = fakeBufferNetwork();
   const tg = fakeTelegramNetwork();
   const buffer = new BufferPublisher({ apiKey: "chave-falsa", channels: { linkedin: "li1", threads: "th1" }, fetch: bufferNet.f });
-  const llm = new FakeLlm({ curator: okDraft({ body, hashtags: [], sourceCredit: undefined }) });
+  const llm = new FakeLlm({ curator: okDraft({ body, hashtags, sourceCredit: undefined, extra: { categoryTag: "astronomia" } }) });
   const env = cleanEnv(tmpDir(), { GROQ_API_KEY: "g", TELEGRAM_BOT_TOKEN: "123:abc", TELEGRAM_ALLOWED_CHAT_IDS: "7" });
   const rt = buildRuntime(dir, env, { withTelegram: true, logger: silentLogger, llm, telegramFetch: tg.f, plugins: { publishers: { buffer } } });
   await rt.app.addManual("texto manual para testar o limite do threads ponta a ponta");
@@ -72,30 +75,16 @@ async function aprovar(bodyLen: number) {
 }
 
 describe("ponta a ponta: limite de 500 caracteres do Threads (Store real, Buffer falso, Telegram falso)", () => {
-  it("501 caracteres: LinkedIn recebe o rascunho completo; Threads vai para envio manual; Telegram entrega o texto para publicar à mão", async () => {
-    const { rt, item, body, bufferNet, tg } = await aprovar(501);
+  it("501 caracteres: vira needs_human com a contagem; sem Aprovar, o clique antigo é recusado e nada vai ao Buffer", async () => {
+    const { rt, item, bufferNet, tg } = await aprovar(501);
     try {
-      // LinkedIn: rascunho completo, no canal do LinkedIn
-      const linkedin = bufferNet.posts().filter((p) => p.channelId === "li1");
-      expect(linkedin).toHaveLength(1);
-      expect(linkedin[0]!.text).toBe(body);
-      expect(linkedin[0]!.saveToDraft).toBe(true);
-      // Threads: nenhuma chamada ao Buffer; a regra do engine manda para envio manual antes
-      expect(bufferNet.posts().filter((p) => p.channelId === "th1")).toHaveLength(0);
-
-      // Telegram: sem falha, só o texto para publicar à mão no Threads (a nota fica no registro)
-      const out = tg.all();
-      expect(out).toMatch(/Postar manualmente no Threads/);
-      expect(out).toContain(body);
-
-      // Estado e registro por destino
-      const rows = rt.store.publicationsOf(item.id);
-      const li = rows.find((r) => r.platform === "linkedin");
-      const th = rows.find((r) => r.platform === "threads");
-      expect(li).toMatchObject({ publisher: "buffer", status: "scheduled", externalId: "post-1" });
-      expect(th).toMatchObject({ publisher: "manual", status: "manual" });
-      expect(th?.error).toMatch(/passa do limite de 500/);
-      expect(rt.store.get(item.id)!.status).toBe("approved");
+      const d = rt.store.get(item.id)!.draft!;
+      expect(d.verdict).toBe("needs_human");
+      expect(d.notes).toMatch(/threads: 501\/500 caracteres, acima do limite/);
+      // o clique em "aprovar" é recusado pelo bot: nenhum post no Buffer, nenhum envio
+      expect(tg.all()).toMatch(/Acima do limite do destino/);
+      expect(bufferNet.posts()).toHaveLength(0);
+      expect(rt.store.get(item.id)!.status).toBe("pending_approval");
     } finally {
       rt.close();
     }
@@ -107,7 +96,7 @@ describe("ponta a ponta: limite de 500 caracteres do Threads (Store real, Buffer
       const posts = bufferNet.posts();
       expect(posts).toHaveLength(2);
       expect(posts.map((p) => p.channelId).sort()).toEqual(["li1", "th1"]);
-      expect(posts.every((p) => p.text === body && p.saveToDraft === true)).toBe(true);
+      expect(posts.every((p) => p.text === `${body}\n\n#a #b #c` && p.saveToDraft === true)).toBe(true);
 
       const out = tg.all();
       expect(out).not.toMatch(/500 caracteres/);

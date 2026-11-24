@@ -66,7 +66,7 @@ export class TelegramBot implements Notifier {
       const media = item.prepared;
       try {
         for (const [i, m] of media.entries()) sent.push((await this.d.api.sendMedia(chat, m, S.mediaCaption(label, i + 1, media.length))).message_id);
-        sent.push((await this.d.api.sendMessage(chat, approvalText(item, this.d.ui), { reply_markup: { inline_keyboard: approvalKeyboard(item.id) } })).message_id);
+        sent.push((await this.d.api.sendMessage(chat, approvalText(item, this.d.ui), { reply_markup: { inline_keyboard: approvalKeyboard(item.id, canApprove(item)) } })).message_id);
       } catch (e) {
         // never leave orphan media behind: the whole card is re-sent on the next tick
         if (sent.length) await this.d.api.deleteMessages(chat, sent).catch(() => {});
@@ -358,6 +358,7 @@ export class TelegramBot implements Notifier {
 
     switch (act) {
       case "a": {
+        if (!canApprove(item)) return void (await this.ack(q.id, S.toastNoApprove));
         await this.ack(q.id, S.toastApproving);
         const outcomes = await actions.approve(id);
         // approved posts leave the chat; only a failure (needs the user's attention) is kept as a message
@@ -374,7 +375,7 @@ export class TelegramBot implements Notifier {
         return;
       case "b":
         await this.ack(q.id);
-        if (mid) await this.d.api.setInlineKeyboard(chat, mid, approvalKeyboard(id));
+        if (mid) await this.d.api.setInlineKeyboard(chat, mid, approvalKeyboard(id, canApprove(this.d.store.get(id))));
         return;
       case "rj": {
         const reason = this.d.ui.rejectReasons.find((r) => r.code === arg);
@@ -426,3 +427,6 @@ function manualMedia(prepared: PreparedMedia[], platforms: string[]): PreparedMe
   }
   return [...out];
 }
+
+/** Rascunho needs_human (acima do limite de algum destino) não pode ser aprovado. */
+const canApprove = (item: Item | undefined): boolean => item?.draft?.verdict !== "needs_human";

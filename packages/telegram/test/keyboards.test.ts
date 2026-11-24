@@ -11,6 +11,11 @@ describe("keyboards", () => {
     expect(k[0]![0]!.text).toBe("✅ Aprovar");
   });
 
+  it("needs_human: sem Aprovar, 🔁 Refazer, editar e rejeitar continuam", () => {
+    const k = approvalKeyboard("p_ab12", false);
+    expect(k.map((r) => r.map((b) => b.callback_data))).toEqual([["r|p_ab12"], ["eb|p_ab12", "eh|p_ab12"], ["rg|p_ab12"]]);
+  });
+
   it("reasons two per row with back", () => {
     const k = reasonsKeyboard("p_ab12", ui().rejectReasons);
     expect(k[0]).toHaveLength(2);

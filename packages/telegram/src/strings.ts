@@ -61,6 +61,7 @@ export const S = {
   toastRejected: "Rejeitado",
   toastPublished: "Marcado como publicado",
   toastAlready: (status: string) => `Já está em ${status}`,
+  toastNoApprove: "Acima do limite do destino: refaça (🔁) ou edite antes de aprovar.",
   toastNotFound: "Item não encontrado",
   toastInvalid: "Ação inválida",
   toastBadReason: "Motivo inválido",

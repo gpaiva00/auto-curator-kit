@@ -18,10 +18,11 @@ export function parseCallback(data: string | undefined): { act: string; id: stri
   return { act, id, arg: rest.length ? rest.join("|") : undefined };
 }
 
-export function approvalKeyboard(id: string): InlineKeyboard {
+/** needs_human (texto acima do limite do destino) não tem Aprovar: só 🔁, editar e rejeitar. */
+export function approvalKeyboard(id: string, canApprove = true): InlineKeyboard {
   return [
     [
-      { text: S.btnApprove, callback_data: cb("a", id) },
+      ...(canApprove ? [{ text: S.btnApprove, callback_data: cb("a", id) }] : []),
       { text: S.btnReject, callback_data: cb("r", id) },
     ],
     [

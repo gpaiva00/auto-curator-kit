@@ -286,6 +286,25 @@ describe("edit, regenerate and cancel flows", () => {
     expect(t.store.kvGet(KV_AWAIT)).toBeUndefined();
   });
 
+  it("needs_human: o card não tem Aprovar e o botão antigo é recusado; item dentro do limite segue com Aprovar", async () => {
+    const t = setup({ chats: ["1"] });
+    t.store.add(item({ draft: { ...draft(), verdict: "needs_human" } }));
+    await t.bot.sendApproval(t.store.get("p_ab12")!);
+    const kb = t.net.of("sendMessage")[0]!.body.reply_markup.inline_keyboard.flat().map((b: { callback_data: string }) => b.callback_data);
+    expect(kb).not.toContain("a|p_ab12");
+    expect(kb).toEqual(expect.arrayContaining(["rg|p_ab12", "eb|p_ab12", "r|p_ab12"]));
+    await t.press("a|p_ab12");
+    expect(t.actions.log.filter((l) => l.startsWith("approve"))).toHaveLength(0);
+  });
+
+  it("item dentro do limite: o card segue com Aprovar", async () => {
+    const t = setup({ chats: ["1"] });
+    t.store.add(item());
+    await t.bot.sendApproval(t.store.get("p_ab12")!);
+    const kb = t.net.of("sendMessage")[0]!.body.reply_markup.inline_keyboard.flat().map((b: { callback_data: string }) => b.callback_data);
+    expect(kb).toContain("a|p_ab12");
+  });
+
   it("/refazer <id> <instrução> chama refazer com a instrução; sem id mostra o uso", async () => {
     const t = setup();
     t.store.add(item());
