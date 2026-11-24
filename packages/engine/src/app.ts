@@ -187,6 +187,19 @@ export class App implements BotActions {
     });
   }
 
+  /** /refazer: pendente ou aprovado sem publicação na fila volta à curadoria com a instrução. Fila e publicado são recusados. */
+  async refazer(id: string, feedback?: string): Promise<void> {
+    const item = this.store.get(id);
+    if (!item) throw new KitError("Item não encontrado.", "NOT_FOUND");
+    // Fila primeiro: um item agendado no Buffer já está "published" e precisa da mensagem de fila.
+    if (this.store.publicationsOf(id).some((p) => p.status === "queued" || p.status === "scheduled")) {
+      throw new KitError("Este item já está na fila de envio; não dá para refazer sem cancelar antes.", "IN_QUEUE");
+    }
+    if (item.status === "published") throw new KitError("Este item já foi publicado; não dá para refazer.", "ALREADY_PUBLISHED");
+    if (item.status === "approved") this.store.transition(id, "pending_approval", "refazer: voltou à aprovação");
+    return this.regenerate(id, feedback);
+  }
+
   /** After edits: re-prepare media and re-send the card (old cards are left to the bot). */
   reprepare(id: string): Promise<void> {
     return this.exclusive(async () => {

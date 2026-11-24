@@ -69,6 +69,7 @@ export const S = {
   addUsage: "ℹ️ Uso: /add <link ou texto>",
   added: (label: string) => `✅ Adicionado: ${label}. Vou processar e aviso quando houver algo para aprovar.`,
   addFailed: (e: string) => `❌ Não deu para adicionar: ${e}`,
+  refazerUsage: "ℹ️ Uso: /refazer <id> <instrução>. Ex.: /refazer p_ab12 mais curto. Os ids aparecem em /pendentes e /fila.",
   idUsage: (cmd: string) => `ℹ️ Uso: /${cmd} <id>. Os ids aparecem em /pendentes e /fila.`,
   unknownId: (id: string) => `❓ Não achei o item ${id}.`,
   bumped: (label: string) => `⭐ ${label} vai na frente da fila.`,

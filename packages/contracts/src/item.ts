@@ -22,7 +22,7 @@ export const TRANSITIONS: Record<Status, readonly Status[]> = {
   curated: ["ready", "skipped", "curated"],
   ready: ["pending_approval", "skipped", "curated"],
   pending_approval: ["approved", "rejected", "curated", "ready"],
-  approved: ["published"],
+  approved: ["published", "pending_approval"],
   rejected: [],
   published: [],
   skipped: [],

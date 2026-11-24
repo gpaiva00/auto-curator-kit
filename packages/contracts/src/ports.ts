@@ -199,6 +199,8 @@ export interface BotActions {
   ingestNow(): Promise<string>;
   /** 🔁 Refazer: back to the Curator with an optional instruction, then re-sent. */
   regenerate(id: string, feedback?: string): Promise<void>;
+  /** /refazer <id> <instrução>: refaz um item pendente ou aprovado sem nada na fila de envio. Recusa published e fila. */
+  refazer(id: string, feedback?: string): Promise<void>;
   /** After ✏️/🏷 edits: re-prepare media (render) and re-send for approval. */
   reprepare(id: string): Promise<void>;
   /** ✅ Aprovar: moves to approved and publishes to each destination. */

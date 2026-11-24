@@ -243,6 +243,14 @@ export class TelegramBot implements Notifier {
         return void (await this.reply(chat, queueText(store.list(QUEUE_STATUSES, 200))));
       case "agenda":
         return void (await this.reply(chat, agendaText(await actions.agenda(), this.d.ui.timezone)));
+      case "refazer": {
+        const [id, ...rest] = arg.split(/\s+/);
+        if (!id) return void (await this.reply(chat, S.refazerUsage));
+        const item = store.get(id);
+        if (!item) return void (await this.reply(chat, S.unknownId(id)));
+        // Recusas (publicado, fila) saem pelo detach como erro; o card volta só quando a curadoria roda.
+        return this.detach(chat, () => this.replaceCard(item, () => actions.refazer(id, rest.join(" ").trim() || undefined)));
+      }
       case "furar":
       case "desfurar": {
         if (!arg) return void (await this.reply(chat, S.idUsage(cmd)));

@@ -156,6 +156,9 @@ export class FakeActions implements BotActions {
   async regenerate(id: string, feedback?: string) {
     this.log.push(`regenerate:${id}:${feedback ?? ""}`);
   }
+  async refazer(id: string, feedback?: string) {
+    this.log.push(`refazer:${id}:${feedback ?? ""}`);
+  }
   async reprepare(id: string) {
     this.log.push(`reprepare:${id}`);
   }

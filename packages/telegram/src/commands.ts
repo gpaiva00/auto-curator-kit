@@ -5,6 +5,7 @@ export const BOT_COMMANDS = [
   { name: "pendentes", aliases: ["pending"], args: "", description: "O que espera a sua aprovação" },
   { name: "fila", aliases: ["queue"], args: "", description: "Tudo em andamento, agrupado por status" },
   { name: "agenda", aliases: ["schedule"], args: "", description: "O que está agendado no Buffer" },
+  { name: "refazer", aliases: [], args: "<id> <instrução>", description: "Refaz o texto de um item antes de sair (sem fila de envio)" },
   { name: "furar", aliases: ["bump"], args: "<id>", description: "Põe um item na frente da fila" },
   { name: "desfurar", aliases: ["unbump"], args: "<id>", description: "Tira a prioridade de um item" },
   { name: "status", aliases: [], args: "", description: "Contagens, gasto de IA, limites e pausa" },

@@ -286,6 +286,15 @@ describe("edit, regenerate and cancel flows", () => {
     expect(t.store.kvGet(KV_AWAIT)).toBeUndefined();
   });
 
+  it("/refazer <id> <instrução> chama refazer com a instrução; sem id mostra o uso", async () => {
+    const t = setup();
+    t.store.add(item());
+    await t.text("/refazer p_ab12 mais curto");
+    expect(t.actions.log).toEqual(["refazer:p_ab12:mais curto"]);
+    await t.text("/refazer");
+    expect(t.actions.log).toHaveLength(1);
+  });
+
   it("/cancelar clears the state; any command cancels it too", async () => {
     const t = setup();
     t.store.add(item());
