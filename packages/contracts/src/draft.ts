@@ -65,5 +65,11 @@ export function destinationMaxChars(d: Pick<Destination, "platform" | "publisher
   return d.platform === "threads" && d.publisher === "buffer" ? 500 : undefined;
 }
 
+/** Teto diário de chamadas ao Buffer para um destino (contador compartilhado da organização). Sem `bufferDailyCalls`, 24. */
+export const DEFAULT_BUFFER_DAILY_CALLS = 24;
+export function destinationBufferDailyCalls(d: Pick<Destination, "bufferDailyCalls">): number {
+  return d.bufferDailyCalls ?? DEFAULT_BUFFER_DAILY_CALLS;
+}
+
 /** Conta caracteres por ponto de código (emoji e acento contam 1; surrogate pair conta 1). */
 export const charCount = (text: string): number => [...text].length;

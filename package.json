@@ -1,6 +1,6 @@
 {
   "name": "auto-curator-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/entries/index.d.ts",

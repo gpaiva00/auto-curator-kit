@@ -15,6 +15,7 @@ ApprovalUiConfig
 BotActions
 BrandConfig
 Clock
+DEFAULT_BUFFER_DAILY_CALLS
 DEFAULT_REJECT_REASONS
 Destination
 DestinationOutcome
@@ -72,6 +73,7 @@ Verdict
 canTransition
 charCount
 composeText
+destinationBufferDailyCalls
 destinationMaxChars
 errMsg
 normalizeHashtag
