@@ -190,4 +190,4 @@ A integração contínua roda typecheck e testes no Node 22.13.0 e no Node 26 (v
 
 ## Licença
 
-A definir. Este repositório ainda não tem arquivo de licença: o uso, a cópia e a redistribuição não estão autorizados até a licença ser publicada.
+MIT. Veja [LICENSE](LICENSE).

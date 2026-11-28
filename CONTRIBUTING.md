@@ -33,6 +33,10 @@ Node 22.13.0 or later is required; CI runs the checks on Node 22.13.0 and Node 2
 - Say how you tested it (commands and Node versions).
 - Link the related issue, if there is one.
 
+## License
+
+By contributing you agree that your contribution is licensed under the MIT license (see [LICENSE](LICENSE)).
+
 ## Reporting security problems
 
 Do not use public issues for vulnerabilities. See [SECURITY.md](SECURITY.md).

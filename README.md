@@ -190,4 +190,4 @@ Continuous integration runs typecheck and tests on Node 22.13.0 and Node 26 (see
 
 ## License
 
-To be decided. This repository does not yet have a license file: use, copying and redistribution are not authorized until a license is published.
+MIT. See [LICENSE](LICENSE).
